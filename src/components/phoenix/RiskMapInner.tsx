@@ -216,7 +216,17 @@ export function ndviColor(v: number) {
 /** Real MODIS 250 m pixels; QA-excluded pixels are grey, never filled. */
 function NdviPixels({ v }: { v: VegetationResult }) {
   const h = v.pixelSizeDeg / 2;
-  return <>{v.windows.flatMap((w) => w.pixels.map((p, i) => {
+  const outlines = v.windows.filter((w) => w.pixels.length).map((w) => {
+    const la = w.pixels.map((p) => p.lat), lo = w.pixels.map((p) => p.lon); const vals = w.pixels.map((p) => p.ndvi).filter((x): x is number => x !== null);
+    const mean = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 1000) / 1000 : null;
+    return (
+      <Rectangle key={`o${w.lat},${w.lon}`} bounds={[[Math.min(...la) - h * 3, Math.min(...lo) - h * 3], [Math.max(...la) + h * 3, Math.max(...lo) + h * 3]]}
+        pathOptions={{ color: mean === null ? css("--unavailable") : ndviColor(mean), weight: 3, fill: false }}>
+        <Popup><b>NDVI sample window</b> (~2 × 2 km, {w.pixels.length} pixels)<br />Mean of valid pixels: {mean ?? "No valid pixels"} · valid {vals.length}/{w.pixels.length}<br />Composite from {v.compositeDate} · {v.source}<br />Zoom in to see individual 250 m pixels.</Popup>
+      </Rectangle>
+    );
+  });
+  return <>{outlines}{v.windows.flatMap((w) => w.pixels.map((p, i) => {
     const hw = h / Math.cos((p.lat * Math.PI) / 180);
     return (
       <Rectangle key={`${w.lat},${w.lon},${i}`} bounds={[[p.lat - h, p.lon - hw], [p.lat + h, p.lon + hw]]}
