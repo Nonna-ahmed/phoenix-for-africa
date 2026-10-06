@@ -33,6 +33,7 @@ export interface Country {
   center: [number, number];
   zoom: number;
   coverage: "active" | "coming-soon";
+  bbox: [number, number, number, number]; // W,S,E,N — used for satellite queries
   status: DataStatus;
   regions: Region[];
   regionLabel: string;
