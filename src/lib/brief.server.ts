@@ -18,10 +18,15 @@ export const BriefInput = z.object({
     strongest: z.array(z.object({ lat: z.number(), lon: z.number(), frp: nn, date: z.string(), confidence: z.string().nullable(), instrument: z.string() })).max(15),
   }),
   weather: z.array(stat).max(8),
-  site: z.object({
-    point: z.array(z.number()).length(2),
-    landCover: z.string().nullable(), elevationM: nn, slopeDeg: nn,
-    population: nn, populationAreaKm2: nn, populationDensity: nn, soilMoistureRoot: nn, soilMoistureDate: z.string().nullable(),
+  clusters: z.array(z.object({ cellLat: z.number(), cellLon: z.number(), count: z.number(), maxFrp: nn })).max(8),
+  soilMoisture: stat,
+  spatialSample: z.object({
+    method: z.string(), points: z.number(), pointsWithData: z.object({ landCover: z.number(), elevation: z.number(), density: z.number() }),
+    landCoverShare: z.record(z.string(), z.number()),
+    elevationM: z.object({ min: nn, max: nn, mean: nn }),
+    densityPerKm2: z.object({ min: nn, max: nn, mean: nn, median: nn }),
+    highDensityPoints: z.array(z.object({ lat: z.number(), lon: z.number(), densityPerKm2: z.number() })).max(5),
+    slope: z.string(), retrievedAt: z.string(),
   }).nullable(),
   infrastructure: z.object({ hospitals: z.number().nullable(), roadSegments: z.number().nullable() }),
   aiRisk: z.string(),
@@ -41,15 +46,15 @@ const COMMON_RULES = `Rules:
 
 const INSTRUCTIONS = `You write wildfire response briefs (decision support) for emergency coordinators in Africa (PHOENIX platform).
 ${COMMON_RULES}
+- Population, elevation and land cover come from a regular grid of sample points across the region (spatialSample): describe ranges/shares across those points, never as exact totals; population is estimated density (people/km²), never a count. Slope is not aggregated.
+- Do not infer fuel type or fire behaviour from land cover alone; do not call soil moisture a drought index; do not call an area dangerous because one layer is high; never issue evacuation orders.
 Use Markdown with exactly these sections:
   ## 1. Situation summary (3-5 bullets; include the selected time range)
-  ## 2. Active fire detections (counts, trend by day, strongest detections with coordinates)
-  ## 3. Environmental conditions (weather and dryness, with data date)
-  ## 4. Population / exposure
-  ## 5. Infrastructure considerations (hospitals, roads)
-  ## 6. Data limitations (missing sources, latency, coverage)
-  ## 7. Recommended actions (5-8 numbered, cautious, field-verification first)
-  ## 8. Data sources (one line per source: provider, latest date, status)
+  ## 2. Observed satellite hotspots (count, trend by day, clusters, strongest detections; state they are thermal anomalies, not confirmed ground fires)
+  ## 3. Environmental conditions (weather and soil moisture, ranges across cells, data date and latency)
+  ## 4. Population exposure & terrain/land (density range, high-density sample points, elevation range, land-cover shares)
+  ## 5. Infrastructure & recommended actions (hospitals/roads with caveats; then 5-8 numbered cautious actions: verification first, monitoring, access, coordination with authorities)
+  ## 6. Data gaps & sources (missing sources, coverage limits, one line per source with date)
 Keep it under 500 words.`;
 
 const nn2 = z.number().nullable();

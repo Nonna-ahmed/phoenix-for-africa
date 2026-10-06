@@ -196,17 +196,18 @@ export const getPixelInfo = createServerFn({ method: "GET" })
 export interface AreaSamplePoint { lat: number; lon: number; landCover: string | null; elevationM: number | null; densityPerKm2: number | null }
 export interface AreaSample {
   bbox: [number, number, number, number]; points: AreaSamplePoint[]; retrievedAt: string;
-  landCoverCounts: Record<string, number>; elevation: { min: number | null; max: number | null }; density: { min: number | null; max: number | null; mean: number | null };
+  landCoverCounts: Record<string, number>; elevation: { min: number | null; max: number | null; mean: number | null }; density: { min: number | null; max: number | null; mean: number | null; median: number | null };
   sources: { landCover: string; terrain: string; population: string };
 }
 
 /** Real values at a 3×3 grid of sample points across an area (no interpolation between points). */
 export const getAreaSample = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) => z.object({ bbox: z.tuple([z.number().min(-25), z.number().min(-40), z.number().max(60), z.number().max(40)]) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ bbox: z.tuple([z.number().min(-25), z.number().min(-40), z.number().max(60), z.number().max(40)]), n: z.number().int().min(3).max(6).optional() }).parse(d))
   .handler(async ({ data }): Promise<AreaSample> => {
     const [w, s, e, n] = data.bbox;
     const pts: [number, number][] = [];
-    for (const fy of [1 / 6, 0.5, 5 / 6]) for (const fx of [1 / 6, 0.5, 5 / 6]) pts.push([r4(s + (n - s) * fy), r4(w + (e - w) * fx)]);
+    const gn = data.n ?? 3; const fr = Array.from({ length: gn }, (_, i) => (i + 0.5) / gn);
+    for (const fy of fr) for (const fx of fr) pts.push([r4(s + (n - s) * fy), r4(w + (e - w) * fx)]);
     const ident = async (url: string, lat: number, lon: number, extra = "") => {
       try {
         const geom = encodeURIComponent(JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } }));
@@ -234,8 +235,8 @@ export const getAreaSample = createServerFn({ method: "GET" })
     for (const p of points) { const k = p.landCover ?? "Unavailable"; landCoverCounts[k] = (landCoverCounts[k] ?? 0) + 1; }
     return {
       bbox: data.bbox, points, retrievedAt: now(), landCoverCounts,
-      elevation: { min: el.length ? Math.min(...el) : null, max: el.length ? Math.max(...el) : null },
-      density: { min: de.length ? Math.min(...de) : null, max: de.length ? Math.max(...de) : null, mean: de.length ? Math.round(de.reduce((a, b) => a + b, 0) / de.length) : null },
+      elevation: { min: el.length ? Math.min(...el) : null, max: el.length ? Math.max(...el) : null, mean: el.length ? Math.round(el.reduce((a, b) => a + b, 0) / el.length) : null },
+      density: { min: de.length ? Math.min(...de) : null, max: de.length ? Math.max(...de) : null, mean: de.length ? Math.round(de.reduce((a, b) => a + b, 0) / de.length) : null, median: de.length ? [...de].sort((a, b) => a - b)[Math.floor(de.length / 2)]! : null },
       sources: { landCover: "Esri / Impact Observatory Sentinel-2 10 m land cover", terrain: "NASA SRTM 30 m via OpenTopoData", population: "WorldPop population density 1 km (2020)" },
     };
   });
