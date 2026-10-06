@@ -21,14 +21,14 @@ function Models() {
             <dl className="mt-2 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <div><dt className="label-mono">Model</dt><dd>{m.type} {m.version}</dd></div>
               <div><dt className="label-mono">Training period</dt><dd>{m.trainingPeriod}</dd></div>
-              <div><dt className="label-mono">ROC-AUC</dt><dd className="font-mono">{m.rocAuc ?? "Not reported"}</dd></div>
-              <div><dt className="label-mono">PR-AUC</dt><dd className="font-mono">{m.prAuc ?? "Not reported"}</dd></div>
+              <div><dt className="label-mono">ROC-AUC</dt><dd className="font-mono">{m.rocAuc ?? "Data unavailable"}</dd></div>
+              <div><dt className="label-mono">PR-AUC</dt><dd className="font-mono">{m.prAuc ?? "Data unavailable"}</dd></div>
               <div className="col-span-2"><dt className="label-mono">Input variables</dt><dd className="font-mono text-xs">{m.features.join(", ")}</dd></div>
               <div><dt className="label-mono">Extent (W,S,E,N)</dt><dd className="font-mono text-xs">{m.bbox?.join(", ") ?? "Province set"}</dd></div>
               <div><dt className="label-mono">Last update</dt><dd>{m.lastUpdate}</dd></div>
             </dl>
             {m.notes && <p className="mt-2 text-sm text-muted-foreground">{m.notes}</p>}
-            <p className="label-mono mt-2">Evaluation metrics — not real-time prediction confidence</p>
+            <p className="label-mono mt-2">Test / evaluation metrics — not live prediction confidence</p>
           </div>))}</div>
       </Section>
       <Section title="Data availability by country">

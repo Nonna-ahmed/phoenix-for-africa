@@ -3,7 +3,7 @@ import { useState } from "react";
 import { COUNTRIES } from "@/data/registry";
 import { RiskMap, MapLegend } from "@/components/phoenix/RiskMap";
 import { PageHeader } from "@/components/phoenix/ui";
-import type { Layers } from "@/components/phoenix/RiskMap.client";
+import type { Layers } from "@/components/phoenix/RiskMapInner";
 
 export const Route = createFileRoute("/map")({
   head: () => ({ meta: [

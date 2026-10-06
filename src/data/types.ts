@@ -25,10 +25,6 @@ export interface Region {
   center: [number, number];
   bbox?: [number, number, number, number]; // W,S,E,N
   modelId?: string; // undefined -> no validated model
-  probability?: number | null; // only when modelId present
-  environment?: Environment;
-  history?: { date: string; p: number }[];
-  lastUpdate?: string;
 }
 
 export interface Country {

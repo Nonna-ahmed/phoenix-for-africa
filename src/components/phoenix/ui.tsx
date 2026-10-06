@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { riskLevel, type Availability, type Alert as AlertT, type DataStatus } from "@/data/types";
-import { COUNTRIES } from "@/data/registry";
+import { riskLevel, type Availability, type DataStatus } from "@/data/types";
+import type { ApiAlert } from "@/services/api/endpoints";
 import { cn } from "@/lib/utils";
 
 export function DemoBadge() {
@@ -49,20 +49,15 @@ export function Empty({ children = "Data unavailable" }: { children?: ReactNode 
   return <p className="rounded-sm border border-dashed p-3 text-sm text-muted-foreground">{children}</p>;
 }
 
-export function AlertCard({ a }: { a: AlertT }) {
-  const c = COUNTRIES.find((x) => x.code === a.countryCode);
-  const r = c?.regions.find((x) => x.id === a.regionId);
+export function AlertCard({ a }: { a: ApiAlert }) {
   const det = a.kind === "detection";
   return (
     <div className={cn("rounded-md border-l-4 bg-card p-3", det ? "border-l-fire" : "border-l-risk-high")}>
-      <div className="flex items-center justify-between gap-2">
-        <span className={cn("font-mono text-xs font-bold tracking-wider", det ? "text-fire" : "text-risk-high")}>{det ? "◉ " : "▲ "}{a.title}</span>
-        <DemoBadge />
-      </div>
-      <div className="mt-1 font-semibold">{r?.name}{c ? `, ${c.name}` : ""}</div>
-      {a.probability !== undefined && <div className="text-sm">Risk Probability: {Math.round(a.probability * 100)}%</div>}
-      <p className="text-sm text-muted-foreground">{a.message}</p>
-      <div className="label-mono mt-1">{a.issuedAt}</div>
+      <span className={cn("font-mono text-xs font-bold tracking-wider", det ? "text-fire" : "text-risk-high")}>{det ? "◉ " : "▲ "}{a.title}</span>
+      <div className="mt-1 font-semibold">{[a.region, a.country].filter(Boolean).join(", ") || "Location unavailable"}</div>
+      {a.probability !== null && <div className="text-sm">Risk Probability: {Math.round(a.probability * 100)}%</div>}
+      {a.message && <p className="text-sm text-muted-foreground">{a.message}</p>}
+      <div className="label-mono mt-1">{a.issuedAt ?? "Time unavailable"}</div>
     </div>
   );
 }

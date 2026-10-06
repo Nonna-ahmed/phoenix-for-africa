@@ -1,3 +1,5 @@
+import { useRegionSummary } from "@/services/api/hooks";
+import type { Region } from "@/data/types";
 import { createFileRoute, Outlet, useMatchRoute } from "@tanstack/react-router";
 import { getCountry } from "@/data/registry";
 import { RiskMap, MapLegend } from "@/components/phoenix/RiskMap";
@@ -23,19 +25,27 @@ function CountryPage() {
   if (!c) return <Empty>Country not supported.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? "Initial PHOENIX implementation." : "Coverage: Coming Soon"}</PageHeader>
+      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? "Real data coverage via the PHOENIX backend." : "Coverage: Coming Soon"}</PageHeader>
       <Section title="Data availability"><DataStatusGrid status={c.status} /></Section>
       <Section title="Country map"><RiskMap countryCode={c.code} height={420} /><MapLegend /></Section>
       <Section title={`${c.regionLabel}s`}>
         {c.regions.length === 0 ? <Empty>AI model not available for this country.</Empty> : (
           <ul className="divide-y">{c.regions.map((r) => (
             <li key={r.id} className="flex items-center justify-between py-2"><RegionLink code={c.code} id={r.id}><span className="font-medium">{r.name} →</span></RegionLink>
-              <RiskPill p={r.modelId ? r.probability : null} /></li>))}</ul>)}
+              <RegionRisk code={c.code} region={r} /></li>))}</ul>)}
       </Section>
-      <div className="grid gap-6 md:grid-cols-2">
+      {c.coverage === "active" && <div className="grid gap-6 md:grid-cols-2">
         <AlertList countryCode={c.code} /><DetectionList countryCode={c.code} />
         <ShelterList countryCode={c.code} /><ReportList countryCode={c.code} />
-      </div>
+      </div>}
     </div>
   );
+}
+
+function RegionRisk({ code, region }: { code: string; region: Region }) {
+  const s = useRegionSummary(code, region);
+  if (!region.modelId) return <RiskPill p={null} />;
+  if (s.q.isLoading) return <span className="text-sm text-muted-foreground">Loading…</span>;
+  if (s.q.isError) return <span className="text-sm text-destructive">Unavailable</span>;
+  return <RiskPill p={s.maxProbability} />;
 }
