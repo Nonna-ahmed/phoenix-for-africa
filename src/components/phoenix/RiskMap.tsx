@@ -7,6 +7,7 @@ import { getAvailability } from "@/data/sources";
 import { DATASETS } from "@/data/datasets";
 import { CONNECTED, useSafeLocations, useFireReports, useHotspots, useRiskMap, useShelters } from "@/services/api/hooks";
 import { apiBaseUrl } from "@/services/api/client";
+import { getOsmHospitals, getOsmRoads } from "@/lib/osm.functions";
 import { getPowerGrid, type GridParam, type GridResult } from "@/lib/grid.functions";
 import { GRID_SCALE, LC_LEGEND, POP_BREAKS, SOIL_PARAMS, WEATHER_PARAMS, scaleColor, type RasterId } from "@/data/rasters";
 import { LAYERS, defaultLayerState, type LayerDef, type LayerId, type LayerState, type LayerStatus } from "./layers";
@@ -56,6 +57,10 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
   const weatherQ = useQuery({ queryKey: ["grid", bbox, wVar], enabled: on.weather, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: wVar } }) });
   const soilQ = useQuery({ queryKey: ["grid", bbox, sVar], enabled: on.soil, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: sVar } }) });
 
+  // OpenStreetMap hospitals and main roads, only while on
+  const hospQ = useQuery({ queryKey: ["osm-h", bbox], enabled: on.osm_hospitals, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getOsmHospitals({ data: { bbox } }) });
+  const roadQ = useQuery({ queryKey: ["osm-r", bbox], enabled: on.osm_roads, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getOsmRoads({ data: { bbox } }) });
+
   // Raster image layers report whether the source actually delivered an image
   const [raster, setRaster] = useState<Partial<Record<RasterId | "terrain", boolean>>>({});
   const onRaster = (id: RasterId | "terrain", ok: boolean) => setRaster((r) => (r[id] === ok ? r : { ...r, [id]: ok }));
@@ -102,6 +107,16 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
         const any = countryCode ? !!avail?.shelterDataAvailable : false;
         return any ? st("ok", "Available") : st("unavailable", countryCode ? "No verified data available for this country" : "No verified data available");
       }
+      case "osm_hospitals": case "osm_roads": {
+        const q = l.id === "osm_hospitals" ? hospQ : roadQ;
+        if (q.isLoading) return st("loading", "Loading…");
+        const d = q.data;
+        if (q.isError || !d || d.status === "error") return st("error", "Data temporarily unavailable");
+        if (d.status === "limited") return st("unavailable", d.message ?? "Limited spatial coverage");
+        const n = "hospitals" in d ? d.hospitals.length : d.roads.length, noun = l.id === "osm_hospitals" ? "hospitals & clinics" : "road segments";
+        if (d.total === 0) return st("empty", `No ${noun} mapped in OSM here`);
+        return n < d.total ? st("partial", `${n.toLocaleString()} of ${d.total.toLocaleString()} ${noun} shown (limit)`) : st("ok", `${n.toLocaleString()} ${noun} (OSM, completeness varies)`);
+      }
       case "weather": return gridStatus(weatherQ);
       case "soil": return gridStatus(soilQ);
       case "landcover": return rasterStatus("landcover", "Raster · 10 m source, shown at screen resolution · click for class");
@@ -136,7 +151,7 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
       {open && <LayerPanel layers={visible} on={on} statuses={statuses} toggle={(id) => setOn((s) => ({ ...s, [id]: !s[id] }))} />}
       <Map countryCode={countryCode} regionId={regionId} riskFilter={riskFilter} height={height} on={{ ...on, ...Object.fromEntries(LAYERS.filter((l) => !visible.includes(l)).map((l) => [l.id, false])) } as LayerState}
         risk={areas.flatMap((a) => a.risk.data ?? [])} shelters={areas.flatMap((a) => a.shelters.data ?? [])} reports={areas.flatMap((a) => a.reports.data ?? [])}
-        hotspots={fires.data?.hotspots} locations={locations} grids={{ weather: weatherQ.data, soil: soilQ.data }} onRaster={onRaster} />
+        hotspots={fires.data?.hotspots} locations={locations} grids={{ weather: weatherQ.data, soil: soilQ.data }} hospitals={hospQ.data?.hospitals} roads={roadQ.data?.roads} onRaster={onRaster} />
       <Legend layers={visible.filter((l) => on[l.id])} statuses={statuses} vars={{ weather: [wVar, setWVar], soil: [sVar, setSVar] }} />
     </div>
   );

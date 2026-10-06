@@ -146,6 +146,14 @@ export const probeSources = createServerFn({ method: "GET" }).handler(async (): 
       const j = await getJson(`https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&latitude=${lat}&longitude=${lon}&start=20250101&end=20250102&format=JSON`);
       return Object.values(j?.properties?.parameter?.T2M ?? {}).some((v) => typeof v === "number" && v > -999);
     }),
+    wrap("osm", async () => {
+      const j = await getJson("https://services-eu1.arcgis.com/zci5bUiJ8olAal7N/arcgis/rest/services/OSM_AF_Medical/FeatureServer/0/query?where=amenity%3D%27hospital%27&geometry=27.3,-11.8,27.6,-11.5&geometryType=esriGeometryEnvelope&inSR=4326&returnCountOnly=true&f=json");
+      return Number(j?.count) > 0;
+    }),
+    wrap("osm-roads", async () => {
+      const j = await getJson("https://services-eu1.arcgis.com/zci5bUiJ8olAal7N/arcgis/rest/services/OSM_AF_Highways/FeatureServer/0/query?where=highway%3D%27primary%27&geometry=27,-12,28,-11&geometryType=esriGeometryEnvelope&inSR=4326&returnCountOnly=true&f=json");
+      return Number(j?.count) > 0;
+    }),
     wrap("grid3", async () => {
       const j = await getJson("https://services3.arcgis.com/BU6Aadhn6tbBEdyk/ArcGIS/rest/services/GRID3_COD_health_facilities_v9_0/FeatureServer/0/query?where=1%3D1&returnCountOnly=true&f=json");
       return Number(j?.count) > 0;

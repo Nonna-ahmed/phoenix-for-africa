@@ -1,5 +1,5 @@
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, ImageOverlay, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, ImageOverlay, Polyline, useMap, useMapEvents } from "react-leaflet";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { COUNTRIES } from "@/data/registry";
@@ -9,6 +9,7 @@ import type { Hotspot } from "@/lib/firms.functions";
 import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type SafeLocation } from "@/data/locations";
 import { getPixelInfo, type PixelInfo } from "@/lib/site.functions";
 import type { GridResult } from "@/lib/grid.functions";
+import type { OsmHospital, OsmRoad } from "@/lib/osm.functions";
 import { GRID_SCALE, HILLSHADE_TILES, rasterUrl, scaleColor, type RasterId } from "@/data/rasters";
 import type { LayerState } from "./layers";
 
@@ -16,7 +17,7 @@ export type RasterStatus = (id: RasterId | "terrain", ok: boolean) => void;
 export interface MapProps {
   countryCode?: string | undefined; regionId?: string | undefined; on: LayerState; riskFilter?: string | undefined; height?: number | undefined;
   risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined;
-  grids?: { weather?: GridResult | undefined; soil?: GridResult | undefined }; onRaster?: RasterStatus;
+  grids?: { weather?: GridResult | undefined; soil?: GridResult | undefined }; onRaster?: RasterStatus; hospitals?: OsmHospital[] | undefined; roads?: OsmRoad[] | undefined;
 }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
@@ -29,7 +30,7 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], grids = {}, onRaster }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], grids = {}, onRaster, hospitals = [], roads = [] }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
@@ -46,6 +47,21 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
         {on.population && <ViewRaster id="population" opacity={0.65} onRaster={onRaster} />}
         {on.weather && grids.weather && <GridCells g={grids.weather} />}
         {on.soil && grids.soil && <GridCells g={grids.soil} />}
+        {on.osm_roads && roads.map((r) => (
+          <Polyline key={r.id} positions={r.paths} pathOptions={{ color: css("--layer-road"), weight: r.highway === "motorway" || r.highway === "trunk" ? 3 : r.highway === "primary" ? 2.2 : 1.4, opacity: 0.85 }}>
+            <Popup><b>{r.name ?? r.ref ?? "Unnamed road"}</b>{r.ref && r.name ? ` (${r.ref})` : ""}<br />Class: {r.highway} · Surface: {na(r.surface)}<br />Not an approved evacuation route<br />Source: OpenStreetMap contributors (ODbL) · {r.id}</Popup>
+          </Polyline>
+        ))}
+        {on.osm_hospitals && hospitals.map((h) => {
+          const hosp = h.amenity === "hospital"; const c = css(hosp ? "--layer-hospital" : "--layer-clinic");
+          return hosp ? (
+            <Rectangle key={h.id} bounds={[[h.lat - 0.006, h.lon - 0.006], [h.lat + 0.006, h.lon + 0.006]]} pathOptions={{ color: css("--foreground"), weight: 1, fillColor: c, fillOpacity: 0.95 }}>
+              <Popup>{hospPopup(h)}</Popup>
+            </Rectangle>
+          ) : (
+            <CircleMarker key={h.id} center={[h.lat, h.lon]} radius={4} pathOptions={{ color: c, fillColor: c, fillOpacity: 0.9, weight: 1 }}><Popup>{hospPopup(h)}</Popup></CircleMarker>
+          );
+        })}
         {(on.landcover || on.terrain || on.population) && <PixelClick on={on} />}
         {COUNTRIES.filter((c) => !countryCode || c.code === countryCode).map((c) => (
           <CircleMarker key={c.code} center={c.center} radius={4} pathOptions={{ color: css("--muted-foreground"), weight: 1, fillOpacity: 0.3 }}>
@@ -172,4 +188,8 @@ function PixelClick({ on }: { on: LayerState }) {
       </>}
     </Popup>
   );
+}
+
+function hospPopup(h: OsmHospital) {
+  return <><b>{h.name ?? "Name unavailable"}</b><br />Type: {h.amenity}{h.healthcare && h.healthcare !== h.amenity ? ` · ${h.healthcare}` : ""} — critical infrastructure, not an emergency shelter<br />Operator: {na(h.operator)} · Emergency dept: {na(h.emergency)}<br />{h.lat.toFixed(4)}, {h.lon.toFixed(4)}<br />Source: OpenStreetMap contributors (ODbL) · {h.id}<br />Verification: community-mapped, unverified</>;
 }
