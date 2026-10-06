@@ -19,6 +19,7 @@ import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as FiresRouteImport } from './routes/fires'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as ModelsRouteImport } from './routes/models'
+import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SheltersRouteImport } from './routes/shelters'
@@ -77,6 +78,11 @@ const ModelsRoute = ModelsRouteImport.update({
   path: '/models',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlanRoute = PlanRouteImport.update({
   id: '/plan',
   path: '/plan',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/fires': typeof FiresRoute
   '/map': typeof MapRoute
   '/models': typeof ModelsRoute
+  '/pipeline': typeof PipelineRoute
   '/plan': typeof PlanRoute
   '/reports': typeof ReportsRoute
   '/shelters': typeof SheltersRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/fires': typeof FiresRoute
   '/map': typeof MapRoute
   '/models': typeof ModelsRoute
+  '/pipeline': typeof PipelineRoute
   '/plan': typeof PlanRoute
   '/reports': typeof ReportsRoute
   '/shelters': typeof SheltersRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/fires': typeof FiresRoute
   '/map': typeof MapRoute
   '/models': typeof ModelsRoute
+  '/pipeline': typeof PipelineRoute
   '/plan': typeof PlanRoute
   '/reports': typeof ReportsRoute
   '/shelters': typeof SheltersRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/fires'
     | '/map'
     | '/models'
+    | '/pipeline'
     | '/plan'
     | '/reports'
     | '/shelters'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/fires'
     | '/map'
     | '/models'
+    | '/pipeline'
     | '/plan'
     | '/reports'
     | '/shelters'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/fires'
     | '/map'
     | '/models'
+    | '/pipeline'
     | '/plan'
     | '/reports'
     | '/shelters'
@@ -243,6 +255,7 @@ export interface RootRouteChildren {
   FiresRoute: typeof FiresRoute
   MapRoute: typeof MapRoute
   ModelsRoute: typeof ModelsRoute
+  PipelineRoute: typeof PipelineRoute
   PlanRoute: typeof PlanRoute
   ReportsRoute: typeof ReportsRoute
   SheltersRoute: typeof SheltersRoute
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/plan': {
       id: '/plan'
       path: '/plan'
@@ -397,6 +417,7 @@ const rootRouteChildren: RootRouteChildren = {
   FiresRoute: FiresRoute,
   MapRoute: MapRoute,
   ModelsRoute: ModelsRoute,
+  PipelineRoute: PipelineRoute,
   PlanRoute: PlanRoute,
   ReportsRoute: ReportsRoute,
   SheltersRoute: SheltersRoute,
