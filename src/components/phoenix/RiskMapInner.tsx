@@ -34,7 +34,7 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
-  const zoom = region ? 8 : country?.zoom ?? 3; console.log("INNER", typeof onBounds);
+  const zoom = region ? 8 : country?.zoom ?? 3;
   const color = { HIGH: css("--risk-high"), MEDIUM: css("--risk-medium"), LOW: css("--risk-low") };
 
   return (
@@ -198,7 +198,7 @@ function hospPopup(h: OsmHospital) {
 /** Reports the visible map area [west, south, east, north] after every pan/zoom. */
 function BoundsWatch({ onBounds }: { onBounds: (b: [number, number, number, number]) => void }) {
   const map = useMap();
-  const send = () => { const b = map.getBounds(); console.log("BOUNDS", b.toBBoxString()); const r = (n: number) => Math.round(n * 1000) / 1000; onBounds([r(b.getWest()), r(b.getSouth()), r(b.getEast()), r(b.getNorth())]); };
+  const send = () => { const b = map.getBounds(); const r = (n: number) => Math.round(n * 1000) / 1000; onBounds([r(b.getWest()), r(b.getSouth()), r(b.getEast()), r(b.getNorth())]); };
   useEffect(() => { send(); }, []);
   useMapEvents({ moveend: send });
   return null;
