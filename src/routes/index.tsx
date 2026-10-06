@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { COUNTRIES } from "@/data/registry";
-import { RiskMap, MapLegend } from "@/components/phoenix/RiskMap";
+import { RiskMap } from "@/components/phoenix/RiskMap";
 import { RankingTable } from "@/components/phoenix/RankingTable";
 import { AlertCard, Section, Stat } from "@/components/phoenix/ui";
 import { ApiState, LiveBadge } from "@/components/phoenix/ApiState";
@@ -39,7 +39,7 @@ function Dashboard() {
       </div>
       <Section title="Africa Wildfire Risk Map" right={<Link to="/map" className="text-sm text-primary">Open full map →</Link>}>
         <RiskMap height={480} />
-        <MapLegend />
+        
       </Section>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><Section title="Highest-Risk Regions in Africa" right={<LiveBadge />}><RankingTable /></Section></div>

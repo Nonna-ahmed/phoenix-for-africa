@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { COUNTRIES } from "@/data/registry";
-import { RiskMap, MapLegend } from "@/components/phoenix/RiskMap";
+import { RiskMap } from "@/components/phoenix/RiskMap";
 import { PageHeader } from "@/components/phoenix/ui";
-import type { Layers } from "@/components/phoenix/RiskMapInner";
 
 export const Route = createFileRoute("/map")({
   head: () => ({ meta: [
@@ -19,8 +18,6 @@ function MapPage() {
   const [country, setCountry] = useState("");
   const [risk, setRisk] = useState("ALL");
   const [time, setTime] = useState("current");
-  const [layers, setLayers] = useState<Layers>({ risk: true, fires: true, shelters: true, reports: true, boundaries: true });
-  const toggle = (k: keyof Layers) => setLayers({ ...layers, [k]: !layers[k] });
   return (
     <div>
       <PageHeader eyebrow="Geospatial" title="Africa Risk Map">Predicted risk and satellite detections are separate layers — never merged into one metric.</PageHeader>
@@ -36,15 +33,10 @@ function MapPage() {
           <select className={sel} value={time} onChange={(e) => setTime(e.target.value)}>
             <option value="current">Last 24 hours</option><option value="48h">48 hours</option><option value="7d">5 days (max)</option>
           </select></label>
-        <div className="flex flex-wrap gap-2">
-          {([["risk", "Predicted Risk"], ["fires", "Satellite Hotspots"], ["shelters", "Shelters"], ["reports", "Fire Reports"], ["boundaries", "Boundaries"]] as const).map(([k, l]) => (
-            <button key={k} onClick={() => toggle(k)} className={`rounded-sm border px-2.5 py-1.5 text-sm ${layers[k] ? "border-primary bg-primary/15 text-foreground" : "text-muted-foreground"}`}>{l}</button>
-          ))}
-        </div>
       </div>
       <p className="mb-2 text-xs text-muted-foreground">Time window applies to satellite hotspots (NASA FIRMS near-real-time). Predicted risk shows the latest model run.</p>
-      <RiskMap countryCode={country || undefined} layers={layers} riskFilter={risk} height={620} days={time === "7d" ? 5 : time === "48h" ? 2 : 1} />
-      <MapLegend />
+      <RiskMap countryCode={country || undefined} riskFilter={risk} height={620} days={time === "7d" ? 5 : time === "48h" ? 2 : 1} />
+      
     </div>
   );
 }

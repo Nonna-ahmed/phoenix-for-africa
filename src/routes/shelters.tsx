@@ -33,7 +33,7 @@ function Shelters() {
             {c?.regions.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select></label>
       </div>
-      <RiskMap countryCode={country} regionId={region || undefined} layers={{ risk: false, fires: false, shelters: true, reports: false, boundaries: true }} height={460} />
+      <RiskMap countryCode={country} regionId={region || undefined} show={["shelters_verified", "safe_locations", "grid3_health", "grid3_school", "grid3_religious", "grid3_settlement"]} initialLayers={{ grid3_health: true, grid3_school: true, grid3_religious: true }} height={460} />
       <ShelterList countryCode={country} regionId={region || undefined} />
     </div>
   );

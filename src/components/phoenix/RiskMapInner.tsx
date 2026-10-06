@@ -6,11 +6,14 @@ import { riskLevel } from "@/data/types";
 import type { ApiReport, ApiShelter, RiskPoint } from "@/services/api/endpoints";
 import type { Hotspot } from "@/lib/firms.functions";
 import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type SafeLocation } from "@/data/locations";
+import type { SiteContext } from "@/lib/site.functions";
+import type { PowerResult } from "@/lib/power.functions";
+import type { LayerState } from "./layers";
 
-export type Layers = { risk: boolean; fires: boolean; shelters: boolean; reports: boolean; boundaries: boolean };
+export interface SitePoint { label: string; lat: number; lon: number; site?: SiteContext | undefined; power?: PowerResult | undefined }
 export interface MapProps {
-  countryCode?: string | undefined; regionId?: string | undefined; layers?: Layers; riskFilter?: string; height?: number;
-  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined;
+  countryCode?: string | undefined; regionId?: string | undefined; on: LayerState; riskFilter?: string | undefined; height?: number | undefined;
+  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined; sitePoints?: SitePoint[] | undefined;
 }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
@@ -23,7 +26,7 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMapInner({ countryCode, regionId, layers = { risk: true, fires: true, shelters: true, reports: true, boundaries: true }, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [] }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], sitePoints = [] }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
@@ -35,15 +38,15 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
         <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" className="phoenix-tiles" />
         <Fly center={center} zoom={zoom} />
-        {layers.boundaries && COUNTRIES.filter((c) => !countryCode || c.code === countryCode).map((c) => (
+        {COUNTRIES.filter((c) => !countryCode || c.code === countryCode).map((c) => (
           <CircleMarker key={c.code} center={c.center} radius={4} pathOptions={{ color: css("--muted-foreground"), weight: 1, fillOpacity: 0.3 }}>
             <Popup><b>{c.name}</b><br />{c.coverage === "active" ? "Real data coverage" : "Coverage: Coming Soon"}</Popup>
           </CircleMarker>
         ))}
-        {layers.boundaries && COUNTRIES.flatMap((c) => c.regions.filter((r) => r.bbox && (!countryCode || c.code === countryCode)).map((r) => (
+        {COUNTRIES.flatMap((c) => c.regions.filter((r) => r.bbox && (!countryCode || c.code === countryCode)).map((r) => (
           <Rectangle key={r.id} bounds={[[r.bbox![1], r.bbox![0]], [r.bbox![3], r.bbox![2]]]} pathOptions={{ color: css("--muted-foreground"), weight: 1, dashArray: "4", fillOpacity: 0 }} />
         )))}
-        {layers.risk && risk.map((p, i) => {
+        {on.risk && risk.map((p, i) => {
           const lvl = p.probability !== null ? riskLevel(p.probability) : null;
           if (riskFilter !== "ALL" && riskFilter !== lvl) return null;
           const c = lvl ? color[lvl] : css("--unavailable");
@@ -60,8 +63,9 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
             </CircleMarker>
           );
         })}
-        {layers.shelters && locations.map((l) => {
+        {locations.map((l) => {
           const confirmed = isConfirmedShelter(l);
+          if (confirmed ? !on.shelters_verified : false) return null;
           const c = confirmed ? css("--shelter") : css(l.locationType === "health_facility" ? "--loc-health" : l.locationType === "school" ? "--loc-school" : l.locationType === "religious_center" ? "--loc-religious" : "--loc-settlement");
           const r = confirmed ? 8 : l.locationType === "settlement" ? 2.5 : 4;
           return (
@@ -78,12 +82,12 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
             </CircleMarker>
           );
         })}
-        {layers.shelters && shelters.map((s) => (
-          <CircleMarker key={s.id} center={[s.lat, s.lon]} radius={6} pathOptions={{ color: css("--shelter"), fillColor: css("--shelter"), fillOpacity: 0.8 }}>
-            <Popup><b>{na(s.name)}</b><br />PHOENIX shelter file (drc_katanga_shelters_final.csv)<br />Verification: Unverified — provenance not provided<br />Capacity: {na(s.capacity)}<br />Status: {na(s.status)}<br />Contact: {na(s.contact)}</Popup>
+        {on.safe_locations && shelters.map((s) => (
+          <CircleMarker key={s.id} center={[s.lat, s.lon]} radius={6} pathOptions={{ color: css("--layer-safe"), fillColor: css("--layer-safe"), fillOpacity: 0.8 }}>
+            <Popup><b>{na(s.name)}</b><br />Potential safe location — not a verified shelter<br />Source: PHOENIX backend · drc_katanga_shelters_final.csv<br />{s.lat.toFixed(4)}, {s.lon.toFixed(4)}<br />Verification: Unverified — provenance not provided<br />Capacity: {na(s.capacity)}<br />Status: {na(s.status)}<br />Contact: {na(s.contact)}</Popup>
           </CircleMarker>
         ))}
-        {layers.fires && hotspots.map((h, i) => (
+        {on.fires && hotspots.map((h, i) => (
           <CircleMarker key={`h${i}`} center={[h.lat, h.lon]} radius={h.frp && h.frp > 50 ? 7 : 5}
             pathOptions={{ color: css("--fire"), weight: 1.5, dashArray: "2 2", fillColor: css("--fire"), fillOpacity: 0.35 }}>
             <Popup>
@@ -96,7 +100,7 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
             </Popup>
           </CircleMarker>
         ))}
-        {layers.reports && reports.map((r) => r.confirmed ? (
+        {on.reports && reports.map((r) => r.confirmed ? (
           <Rectangle key={r.id} bounds={[[r.lat - 0.03, r.lon - 0.03], [r.lat + 0.03, r.lon + 0.03]]} pathOptions={{ color: css("--foreground"), weight: 2, fillColor: css("--destructive"), fillOpacity: 0.95 }}>
             <Popup><b>Confirmed ground fire</b><br />Verified report<br />{na(r.description)}<br />{na(r.reportedAt)}</Popup>
           </Rectangle>
@@ -105,7 +109,40 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
             <Popup><b>Community fire report</b> (unverified)<br />{na(r.description)}<br />{na(r.reportedAt)}</Popup>
           </CircleMarker>
         ))}
+        <SiteMarkers points={sitePoints} on={on} />
       </MapContainer>
     </div>
   );
+}
+
+const SITE_KEYS = [["weather", "--layer-weather"], ["soil", "--layer-soil"], ["landcover", "--layer-landcover"], ["terrain", "--layer-terrain"], ["population", "--layer-pop"]] as const;
+
+/** One marker per enabled context layer per region point, slightly offset so layers never merge. */
+function SiteMarkers({ points, on }: { points: SitePoint[]; on: LayerState }) {
+  const active = SITE_KEYS.filter(([k]) => on[k]);
+  return <>{points.flatMap((p) => active.map(([k, v], i) => {
+    const off = (i - (active.length - 1) / 2) * 0.12;
+    const body = siteBody(k, p);
+    if (!body) return null;
+    const c = css(v);
+    return (
+      <Rectangle key={`${k}-${p.lat}-${p.lon}`} bounds={[[p.lat - 0.05, p.lon + off - 0.05], [p.lat + 0.05, p.lon + off + 0.05]]} pathOptions={{ color: c, fillColor: c, fillOpacity: 0.9, weight: 3 }}>
+        <Popup><b>{p.label}</b><br />{body}<br />{p.lat.toFixed(3)}, {p.lon.toFixed(3)} (region reference point)</Popup>
+      </Rectangle>
+    );
+  }))}</>;
+}
+
+function siteBody(k: (typeof SITE_KEYS)[number][0], p: SitePoint) {
+  const s = p.site;
+  if (k === "weather") {
+    const d = p.power; if (!d?.latest) return null; const v = d.latest.values;
+    return <>NASA POWER weather · {d.latest.date}<br />Max {fmt(v.T2M_MAX, "°C")} · Min {fmt(v.T2M_MIN, "°C")} · RH {fmt(v.RH2M, "%")}<br />Wind {fmt(v.WS2M, " m/s")} · Rain {fmt(v.PRECTOTCORR, " mm")}<br />Source: {d.source} · {d.dataset}</>;
+  }
+  if (!s) return null;
+  if (k === "soil") { const x = s.drought; if (x.status !== "ok") return null; return <>Soil moisture · {x.date}<br />Root zone {fmt(x.soilMoistureRoot, "")} · Surface {fmt(x.soilMoistureTop, "")} (0 dry – 1 saturated)<br />Source: {x.source} · {x.product}</>; }
+  if (k === "landcover") { const x = s.landCover; if (x.status !== "ok") return null; return <>Land cover: {x.landCoverLabel} (code {x.landCoverCode})<br />Source: {x.source} · {x.product}</>; }
+  if (k === "terrain") { const x = s.terrain; if (x.status !== "ok") return null; return <>Elevation {fmt(x.elevation, " m")} · Slope {fmt(x.slope, "°")} · Aspect {fmt(x.aspect, "°")}<br />Source: {x.source} · {x.product}</>; }
+  const x = s.population; if (x.status !== "ok") return null;
+  return <>Population ≈ {x.population?.toLocaleString() ?? "Missing"} within ~{x.areaKm2} km² (estimate, not an exact count)<br />Source: {x.source} · {x.product}</>;
 }
