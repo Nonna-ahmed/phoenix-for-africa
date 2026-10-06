@@ -37,3 +37,9 @@ export function useRegionSummary(country: string, region: { id: string; bbox?: [
     : [];
   return { q, points: pts, maxProbability: top?.probability ?? null, latestDate: latest, environment: envPt?.environment ?? null, trend };
 }
+
+import { getFirmsHotspots } from "@/lib/firms.functions";
+/** NASA FIRMS hotspots via our server function (MAP_KEY stays server-side). */
+export function useHotspots(bbox: [number, number, number, number] | undefined, days = 1, enabled = true) {
+  return useQuery({ ...opts, staleTime: 15 * 60_000, queryKey: ["firms", bbox, days], enabled, queryFn: () => getFirmsHotspots({ data: { bbox, days } }) });
+}
