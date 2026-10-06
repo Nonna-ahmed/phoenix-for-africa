@@ -7,6 +7,7 @@ import type { LocationType } from "@/data/locations";
 export type LayerId =
   | "fires" | "risk" | "weather" | "soil" | "landcover" | "terrain" | "population"
   | "grid3_health" | "grid3_school" | "grid3_religious" | "grid3_settlement"
+  | "osm_hospitals" | "osm_roads"
   | "shelters_verified" | "safe_locations" | "reports";
 
 export type LegendShape = "dot" | "ring" | "square" | "diamond";
@@ -39,6 +40,10 @@ export const LAYERS: LayerDef[] = [
     legend: [{ color: "--loc-religious", label: "Religious center (not a shelter)", shape: "dot" }] },
   { id: "grid3_settlement", icon: "📍", label: "GRID3 Settlements", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "settlement",
     legend: [{ color: "--loc-settlement", label: "Settlement", shape: "dot" }] },
+  { id: "osm_hospitals", icon: "🏥", label: "OSM Hospitals & Clinics", datasetIds: ["osm-infra"], defaultOn: false,
+    legend: [{ color: "--layer-hospital", label: "Hospital (critical infrastructure, not a shelter)", shape: "square" }, { color: "--layer-clinic", label: "Clinic", shape: "dot" }] },
+  { id: "osm_roads", icon: "🛣️", label: "OSM Main Roads", datasetIds: ["osm-roads"], defaultOn: false,
+    legend: [{ color: "--layer-road", label: "Motorway / trunk / primary / secondary — not approved evacuation routes", shape: "square" }] },
   { id: "shelters_verified", icon: "🚨", label: "Verified Emergency Shelters", datasetIds: ["shelters-official"], defaultOn: true,
     legend: [{ color: "--shelter", label: "Verified emergency shelter", shape: "diamond" }] },
   { id: "safe_locations", icon: "📍", label: "Potential Safe Locations", datasetIds: [], sourceText: "PHOENIX backend — drc_katanga_shelters_final.csv (unverified)", defaultOn: true,

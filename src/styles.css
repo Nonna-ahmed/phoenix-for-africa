@@ -48,6 +48,9 @@
   --color-layer-terrain: var(--layer-terrain);
   --color-layer-pop: var(--layer-pop);
   --color-layer-safe: var(--layer-safe);
+  --color-layer-hospital: var(--layer-hospital);
+  --color-layer-clinic: var(--layer-clinic);
+  --color-layer-road: var(--layer-road);
 }
 
 :root {
@@ -88,6 +91,9 @@
   --layer-terrain: oklch(0.7 0.05 30);
   --layer-pop: oklch(0.75 0.15 350);
   --layer-safe: oklch(0.85 0.08 200);
+  --layer-hospital: oklch(0.7 0.2 25);
+  --layer-clinic: oklch(0.8 0.12 15);
+  --layer-road: oklch(0.88 0.03 90);
   --gradient-ember: radial-gradient(ellipse at top left, oklch(0.72 0.18 45 / 0.18), transparent 60%);
 }
 
