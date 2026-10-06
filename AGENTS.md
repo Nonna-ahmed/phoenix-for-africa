@@ -19,3 +19,4 @@
 - Leaflet map lives in `RiskMapInner.tsx`, loaded lazily behind ClientOnly — Leaflet breaks SSR and `*.client.*` names are rejected by the SSR build.
 - NASA POWER weather comes from `src/lib/power.functions.ts` (server fn, cached, -999 → null) — country-independent, keyless, provenance returned with every result.
 - Shelters/safe locations use the `SafeLocation` schema (`src/data/locations.ts`) and the per-country source registry (`src/data/sources.ts`), fetched by `src/lib/locations.functions.ts` — a location is a confirmed shelter only if `isEmergencyShelter` and official/humanitarian-verified; GRID3 is never a shelter registry.
+- Land cover, terrain, population and soil moisture come from `src/lib/site.functions.ts` (each source independent, failure → "unavailable"); the dataset registry is `src/data/datasets.ts` and a source shows "Available" only after the live `probeSources` check succeeds — never claim coverage PHOENIX hasn't retrieved.
