@@ -76,9 +76,3 @@ export const getPowerGrid = createServerFn({ method: "GET" })
     }
   });
 
-export interface PixelInfo {
-  lat: number; lon: number;
-  landCover?: { status: "ok" | "unavailable"; label: string | null; code: number | null; source: string; product: string };
-  population?: { status: "ok" | "unavailable"; density: number | null; year: number; source: string; product: string };
-  terrain?: { status: "ok" | "unavailable"; elevation: number | null; slope: number | null; aspect: number | null; source: string; product: string };
-}

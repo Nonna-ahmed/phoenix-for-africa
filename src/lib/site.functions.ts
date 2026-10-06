@@ -159,3 +159,28 @@ export const probeSources = createServerFn({ method: "GET" }).handler(async (): 
     { id: "soil", ok: dr.status === "ok", checkedAt: at, message: dr.message },
   ];
 });
+
+export const WORLDPOP_DENSITY_URL = "https://worldpop.arcgis.com/arcgis/rest/services/WorldPop_Population_Density_1km/ImageServer";
+export interface PixelInfo { lat: number; lon: number; landCover?: LandCover; terrain?: Terrain; density?: { status: Status; value: number | null; year: number; source: string; product: string } }
+
+/** Values of the raster layers at one clicked map location (real pixel values, nothing interpolated). */
+export const getPixelInfo = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ lat: z.number().min(-40).max(40), lon: z.number().min(-25).max(60), layers: z.array(z.enum(["landcover", "terrain", "population"])) }).parse(d))
+  .handler(async ({ data }): Promise<PixelInfo> => {
+    const { lat, lon, layers } = data;
+    const out: PixelInfo = { lat, lon };
+    await Promise.all([
+      layers.includes("landcover") && landCover(lat, lon).then((x) => { out.landCover = x; }),
+      layers.includes("terrain") && terrain(lat, lon).then((x) => { out.terrain = x; }),
+      layers.includes("population") && (async () => {
+        const meta = { year: 2020, source: "WorldPop", product: "Population density 1 km (2020)" };
+        try {
+          const geom = encodeURIComponent(JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } }));
+          const j = await getJson(`${WORLDPOP_DENSITY_URL}/identify?geometry=${geom}&geometryType=esriGeometryPoint&time=1577836800000&returnCatalogItems=false&f=json`);
+          const v = Number(j?.value);
+          out.density = Number.isFinite(v) && v >= 0 ? { ...meta, status: "ok", value: Math.round(v) } : { ...meta, status: "unavailable", value: null };
+        } catch (e) { console.error("worldpop identify", e); out.density = { ...meta, status: "unavailable", value: null }; }
+      })(),
+    ]);
+    return out;
+  });
