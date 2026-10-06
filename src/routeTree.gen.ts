@@ -20,6 +20,7 @@ import { Route as MapRouteImport } from './routes/map'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SheltersRouteImport } from './routes/shelters'
+import { Route as ApiBriefRouteImport } from './routes/api/brief'
 import { Route as CountryCountryCodeRouteImport } from './routes/country.$countryCode'
 import { Route as CountryCountryCodeRegionRegionIdRouteImport } from './routes/country.$countryCode.region.$regionId'
 
@@ -78,6 +79,11 @@ const SheltersRoute = SheltersRouteImport.update({
   path: '/shelters',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBriefRoute = ApiBriefRouteImport.update({
+  id: '/api/brief',
+  path: '/api/brief',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CountryCountryCodeRoute = CountryCountryCodeRouteImport.update({
   id: '/country/$countryCode',
   path: '/country/$countryCode',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/models': typeof ModelsRoute
   '/reports': typeof ReportsRoute
   '/shelters': typeof SheltersRoute
+  '/api/brief': typeof ApiBriefRoute
   '/country/$countryCode': typeof CountryCountryCodeRouteWithChildren
   '/country/$countryCode/region/$regionId': typeof CountryCountryCodeRegionRegionIdRoute
 }
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/models': typeof ModelsRoute
   '/reports': typeof ReportsRoute
   '/shelters': typeof SheltersRoute
+  '/api/brief': typeof ApiBriefRoute
   '/country/$countryCode': typeof CountryCountryCodeRouteWithChildren
   '/country/$countryCode/region/$regionId': typeof CountryCountryCodeRegionRegionIdRoute
 }
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/models': typeof ModelsRoute
   '/reports': typeof ReportsRoute
   '/shelters': typeof SheltersRoute
+  '/api/brief': typeof ApiBriefRoute
   '/country/$countryCode': typeof CountryCountryCodeRouteWithChildren
   '/country/$countryCode/region/$regionId': typeof CountryCountryCodeRegionRegionIdRoute
 }
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/models'
     | '/reports'
     | '/shelters'
+    | '/api/brief'
     | '/country/$countryCode'
     | '/country/$countryCode/region/$regionId'
   fileRoutesByTo: FileRoutesByTo
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/models'
     | '/reports'
     | '/shelters'
+    | '/api/brief'
     | '/country/$countryCode'
     | '/country/$countryCode/region/$regionId'
   id:
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/models'
     | '/reports'
     | '/shelters'
+    | '/api/brief'
     | '/country/$countryCode'
     | '/country/$countryCode/region/$regionId'
   fileRoutesById: FileRoutesById
@@ -196,6 +208,7 @@ export interface RootRouteChildren {
   ModelsRoute: typeof ModelsRoute
   ReportsRoute: typeof ReportsRoute
   SheltersRoute: typeof SheltersRoute
+  ApiBriefRoute: typeof ApiBriefRoute
   CountryCountryCodeRoute: typeof CountryCountryCodeRouteWithChildren
 }
 
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SheltersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/brief': {
+      id: '/api/brief'
+      path: '/api/brief'
+      fullPath: '/api/brief'
+      preLoaderRoute: typeof ApiBriefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/country/$countryCode': {
       id: '/country/$countryCode'
       path: '/country/$countryCode'
@@ -318,6 +338,7 @@ const rootRouteChildren: RootRouteChildren = {
   ModelsRoute: ModelsRoute,
   ReportsRoute: ReportsRoute,
   SheltersRoute: SheltersRoute,
+  ApiBriefRoute: ApiBriefRoute,
   CountryCountryCodeRoute: CountryCountryCodeRouteWithChildren,
 }
 export const routeTree = rootRouteImport

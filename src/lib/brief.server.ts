@@ -57,19 +57,35 @@ export async function handleBrief(request: Request): Promise<Response> {
     headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
     fetch: runIdFetch.fetch,
   });
-  let failure: { status: number; message: string } | null = null;
   const result = streamText({
     model: provider.responses(MODEL),
     instructions: INSTRUCTIONS,
     messages: [{ role: "user", content: `Write the response brief from this PHOENIX data (JSON):\n${JSON.stringify(input)}` }],
     abortSignal: request.signal,
     providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", include: ["reasoning.encrypted_content"] } },
-    onError: ({ error }) => {
-      const e = error as { statusCode?: number; message?: string };
-      failure = { status: e.statusCode ?? 500, message: e.message ?? "AI request failed" };
-      console.error("brief AI error", e.statusCode, e.message);
+  });
+  // Plain-text stream; a failure is appended as a single marker line the page turns into an error message.
+  const enc = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    async start(c) {
+      try {
+        for await (const part of result.fullStream) {
+          if (part.type === "text-delta") c.enqueue(enc.encode(part.text));
+          else if (part.type === "error") throw part.error;
+        }
+      } catch (err) {
+        const e = err as { statusCode?: number; message?: string; name?: string };
+        if (e?.name !== "AbortError") {
+          const status = e?.statusCode ?? 500;
+          console.error("brief AI error", status, e?.message);
+          const msg = status === 402 ? "AI credits are used up. Add credits in Settings → Plans & credits, then try again."
+            : status === 429 ? "The AI service is busy. Please wait a minute and try again."
+            : status === 403 ? "AI access is blocked for this workspace (limit or policy). A workspace admin can review it."
+            : "The AI brief could not be generated. Please try again later.";
+          c.enqueue(enc.encode(`\n[[PHOENIX_ERROR:${msg}]]`));
+        }
+      } finally { c.close(); }
     },
   });
-  void failure;
-  return withLovableAiGatewayRunIdHeader(result.toTextStreamResponse({ headers: { "Cache-Control": "no-store" } }), runIdFetch);
+  return withLovableAiGatewayRunIdHeader(new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }), runIdFetch);
 }
