@@ -1,3 +1,4 @@
+import { getPowerDaily } from "@/lib/power.functions";
 import { getFirmsHotspots } from "@/lib/firms.functions";
 import { useQuery } from "@tanstack/react-query";
 import { apiBaseUrl } from "./client";
@@ -42,4 +43,9 @@ export function useRegionSummary(country: string, region: { id: string; bbox?: [
 /** NASA FIRMS hotspots via our server function (MAP_KEY stays server-side). */
 export function useHotspots(bbox: [number, number, number, number] | undefined, days = 1, enabled = true) {
   return useQuery({ ...opts, staleTime: 15 * 60_000, queryKey: ["firms", bbox, days], enabled, queryFn: () => getFirmsHotspots({ data: { bbox, days } }) });
+}
+
+/** NASA POWER daily weather for a point (server fn, no key needed). */
+export function usePower(point: [number, number] | undefined, days = 14) {
+  return useQuery({ ...opts, staleTime: 3 * 3600_000, queryKey: ["power", point, days], enabled: !!point, queryFn: () => getPowerDaily({ data: { lat: point![0], lon: point![1], days } }) });
 }
