@@ -7,7 +7,7 @@ import { z } from "zod";
  * blocks the others. No values are ever invented.
  */
 type Status = "ok" | "unavailable";
-interface Prov { status: Status; message?: string; source: string; product: string; sourceUrl: string; retrievedAt: string; resolution?: string }
+interface Prov { status: Status; message?: string | undefined; source: string; product: string; sourceUrl: string; retrievedAt: string; resolution?: string }
 
 export type LandCoverType = "tree_cover" | "shrub_grass_rangeland" | "cropland" | "built_up" | "bare_sparse" | "wetland" | "water" | "snow_ice" | "cloud" | "unknown";
 export interface LandCover extends Prov { landCoverType: LandCoverType | null; landCoverCode: number | null; landCoverLabel: string | null; landCoverDate: string | null }
@@ -63,7 +63,7 @@ async function terrain(lat: number, lon: number): Promise<Terrain> {
       const e = z[4] ?? null;
       return { ...base, status: e === null ? "unavailable" : "ok", message: e === null ? "No elevation at this point" : undefined, elevation: e, slope: null, aspect: null };
     }
-    const [a, b, c, dd, e, f, g, h, i] = z as number[];
+    const [a, b, c, dd, e, f, g, h, i] = z as [number, number, number, number, number, number, number, number, number];
     const cell = d * 111320, cellX = cell * Math.cos((lat * Math.PI) / 180);
     const dzdx = ((c + 2 * f + i) - (a + 2 * dd + g)) / (8 * cellX);
     const dzdy = ((g + 2 * h + i) - (a + 2 * b + c)) / (8 * cell); // positive = rises to south
@@ -126,7 +126,7 @@ export const getSiteContext = createServerFn({ method: "GET" })
     return result;
   });
 
-export interface ProbeResult { id: string; ok: boolean; checkedAt: string; message?: string }
+export interface ProbeResult { id: string; ok: boolean; checkedAt: string; message?: string | undefined }
 
 /** Live health check: a source is "Available" only if PHOENIX retrieves usable data right now. */
 export const probeSources = createServerFn({ method: "GET" }).handler(async (): Promise<ProbeResult[]> => {
