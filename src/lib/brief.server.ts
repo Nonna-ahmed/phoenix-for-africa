@@ -58,7 +58,7 @@ export const PlanInput = z.object({
   area: z.object({ label: z.string(), bbox: z.array(z.number()).length(4), areaKm2: z.number() }),
   weather: z.array(stat).max(8),
   samples: z.object({
-    points: z.number(), landCoverCounts: z.record(z.string(), z.number()),
+    points: z.number(), pointValues: z.array(z.object({ lat: z.number(), lon: z.number(), landCover: z.string().nullable(), elevationM: nn2, densityPerKm2: nn2 })).max(9), landCoverCounts: z.record(z.string(), z.number()),
     elevationM: z.object({ min: nn2, max: nn2 }), densityPerKm2: z.object({ min: nn2, max: nn2, mean: nn2 }),
     retrievedAt: z.string(),
   }).nullable(),
@@ -69,6 +69,7 @@ export type PlanInputT = z.infer<typeof PlanInput>;
 const PLAN_INSTRUCTIONS = `You help emergency planners in Africa prepare for wildfires (PHOENIX platform). Answer the planner's question about the selected map area using only the data provided.
 ${COMMON_RULES}
 - Land cover, elevation and population density come from a 3x3 grid of sample points across the area — say so; they describe those points, not every location.
+- There is no time range: weather/soil are the latest published NASA POWER day. You may name sample-point coordinates as potential priority areas.
 - If the question cannot be answered from the data, say what is missing instead of guessing.
 Use Markdown with these sections:
   ## Answer (2-4 sentences directly answering the question)

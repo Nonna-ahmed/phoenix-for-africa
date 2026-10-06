@@ -58,7 +58,7 @@ function PlanPage() {
       question: question.trim(),
       area: { label: `Planner-selected map area (near ${r?.name ?? "?"}, ${c?.name ?? country})`, bbox: [...area!], areaKm2: km2(area!) },
       weather: grids.map((g) => gridStat(g.data)),
-      samples: s ? { points: s.points.length, landCoverCounts: s.landCoverCounts, elevationM: s.elevation, densityPerKm2: s.density, retrievedAt: s.retrievedAt } : null,
+      samples: s ? { points: s.points.length, pointValues: s.points, landCoverCounts: s.landCoverCounts, elevationM: s.elevation, densityPerKm2: s.density, retrievedAt: s.retrievedAt } : null,
       sources: [
         ...grids.map((g, i) => ({ name: GRID_SCALE[VARS[i]!].label, provider: "NASA POWER", status: g.data?.status ?? "unavailable", latestDate: g.data?.status === "ok" ? g.data.date : null, latency: "published a few days late; not real-time" })),
         { name: "Land cover (9 sample points)", provider: s?.sources.landCover ?? "Esri / Impact Observatory", status: s && Object.keys(s.landCoverCounts).some((k) => k !== "Unavailable") ? "ok" : "unavailable", latestDate: null, latency: "yearly" },
