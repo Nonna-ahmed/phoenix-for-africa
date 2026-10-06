@@ -1,13 +1,19 @@
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, useMap } from "react-leaflet";
 import { useEffect } from "react";
-import { COUNTRIES, DETECTIONS, REPORTS, SHELTERS } from "@/data/registry";
+import { COUNTRIES } from "@/data/registry";
 import { riskLevel } from "@/data/types";
+import type { ApiReport, ApiShelter, RiskPoint } from "@/services/api/endpoints";
 
 export type Layers = { risk: boolean; fires: boolean; shelters: boolean; reports: boolean; boundaries: boolean };
-export interface MapProps { countryCode?: string | undefined; regionId?: string | undefined; layers?: Layers; riskFilter?: string; height?: number }
+export interface MapProps {
+  countryCode?: string | undefined; regionId?: string | undefined; layers?: Layers; riskFilter?: string; height?: number;
+  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined;
+}
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+const fmt = (v: number | null | undefined, u: string) => (v === null || v === undefined ? "Missing" : `${v}${u}`);
+const na = (v: unknown) => (v === null || v === undefined || v === "" ? "Data unavailable" : String(v));
 
 function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
@@ -15,12 +21,11 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMap({ countryCode, regionId, layers = { risk: true, fires: true, shelters: true, reports: true, boundaries: true }, riskFilter = "ALL", height = 520 }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, layers = { risk: true, fires: true, shelters: true, reports: true, boundaries: true }, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [] }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
   const zoom = region ? 8 : country?.zoom ?? 3;
-  const inScope = (cc: string, rid?: string) => (!countryCode || cc === countryCode) && (!regionId || rid === regionId);
   const color = { HIGH: css("--risk-high"), MEDIUM: css("--risk-medium"), LOW: css("--risk-low") };
 
   return (
@@ -30,31 +35,37 @@ export default function RiskMap({ countryCode, regionId, layers = { risk: true, 
         <Fly center={center} zoom={zoom} />
         {layers.boundaries && COUNTRIES.filter((c) => !countryCode || c.code === countryCode).map((c) => (
           <CircleMarker key={c.code} center={c.center} radius={4} pathOptions={{ color: css("--muted-foreground"), weight: 1, fillOpacity: 0.3 }}>
-            <Popup><b>{c.name}</b><br />{c.coverage === "active" ? "Coverage active" : "Coverage: Coming Soon"}</Popup>
+            <Popup><b>{c.name}</b><br />{c.coverage === "active" ? "Real data coverage" : "Coverage: Coming Soon"}</Popup>
           </CircleMarker>
         ))}
-        {layers.risk && COUNTRIES.flatMap((c) => c.regions.filter((r) => inScope(c.code, r.id) && typeof r.probability === "number").map((r) => {
-          const lvl = riskLevel(r.probability!);
+        {layers.boundaries && COUNTRIES.flatMap((c) => c.regions.filter((r) => r.bbox && (!countryCode || c.code === countryCode)).map((r) => (
+          <Rectangle key={r.id} bounds={[[r.bbox![1], r.bbox![0]], [r.bbox![3], r.bbox![2]]]} pathOptions={{ color: css("--muted-foreground"), weight: 1, dashArray: "4", fillOpacity: 0 }} />
+        )))}
+        {layers.risk && risk.map((p, i) => {
+          const lvl = p.probability !== null ? riskLevel(p.probability) : null;
           if (riskFilter !== "ALL" && riskFilter !== lvl) return null;
-          const opts = { color: color[lvl], weight: 1.5, fillOpacity: 0.25 };
-          const popup = <Popup><b>{r.name}</b><br />Predicted Risk: {Math.round(r.probability! * 100)}% ({lvl})<br /><i>Demo value</i></Popup>;
-          return r.bbox
-            ? <Rectangle key={r.id} bounds={[[r.bbox[1], r.bbox[0]], [r.bbox[3], r.bbox[2]]]} pathOptions={opts}>{popup}</Rectangle>
-            : <CircleMarker key={r.id} center={r.center} radius={28} pathOptions={opts}>{popup}</CircleMarker>;
-        }))}
-        {layers.fires && DETECTIONS.filter((d) => inScope(d.countryCode, d.regionId)).map((d) => (
-          <CircleMarker key={d.id} center={[d.lat, d.lon]} radius={6} pathOptions={{ color: css("--fire"), fillColor: css("--fire"), fillOpacity: 0.9, weight: 2 }}>
-            <Popup><b>Satellite Fire Detection</b><br />Source: NASA FIRMS · {d.sensor}<br />{d.acqDate} {d.acqTime} UTC<br />Confidence: {d.confidence ?? "n/a"}<br /><i>Demo — not a confirmed fire</i></Popup>
-          </CircleMarker>
-        ))}
-        {layers.shelters && SHELTERS.filter((s) => inScope(s.countryCode, s.regionId)).map((s) => (
+          const c = lvl ? color[lvl] : css("--unavailable");
+          return (
+            <CircleMarker key={`${p.lat},${p.lon},${i}`} center={[p.lat, p.lon]} radius={7} pathOptions={{ color: c, fillColor: c, fillOpacity: 0.55, weight: 1 }}>
+              <Popup>
+                <b>Predicted Wildfire Risk</b><br />
+                {p.lat.toFixed(3)}, {p.lon.toFixed(3)}<br />
+                Probability: {p.probability !== null ? `${(p.probability * 100).toFixed(1)}%` : "Data unavailable"}<br />
+                Risk level: {lvl ?? "Data unavailable"}<br />
+                Date: {na(p.date)}<br />
+                {p.environment ? <>T2M_MAX {fmt(p.environment.t2mMax, "°C")} · T2M_MIN {fmt(p.environment.t2mMin, "°C")}<br />RH2M {fmt(p.environment.rh2m, "%")} · WS2M {fmt(p.environment.ws2m, " m/s")} · PRECTOTCORR {fmt(p.environment.precip, " mm")}</> : "Environmental data unavailable"}
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+        {layers.shelters && shelters.map((s) => (
           <CircleMarker key={s.id} center={[s.lat, s.lon]} radius={6} pathOptions={{ color: css("--shelter"), fillColor: css("--shelter"), fillOpacity: 0.8 }}>
-            <Popup><b>{s.name}</b><br />Capacity: {s.capacity ?? "n/a"} · {s.status}</Popup>
+            <Popup><b>{na(s.name)}</b><br />Capacity: {na(s.capacity)}<br />Status: {na(s.status)}<br />Contact: {na(s.contact)}</Popup>
           </CircleMarker>
         ))}
-        {layers.reports && REPORTS.filter((r) => inScope(r.countryCode, r.regionId)).map((r) => (
+        {layers.reports && reports.map((r) => (
           <CircleMarker key={r.id} center={[r.lat, r.lon]} radius={5} pathOptions={{ color: css("--report"), fillColor: css("--report"), fillOpacity: 0.8 }}>
-            <Popup><b>Community fire report</b><br />{r.description}<br />{r.reportedAt}</Popup>
+            <Popup><b>Community fire report</b><br />{na(r.description)}<br />{na(r.reportedAt)}</Popup>
           </CircleMarker>
         ))}
       </MapContainer>
