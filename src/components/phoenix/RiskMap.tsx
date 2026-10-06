@@ -1,14 +1,14 @@
 import { lazy, Suspense, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
-import { useQueries } from "@tanstack/react-query";
-import type { MapProps, SitePoint } from "./RiskMapInner";
-import { getCountry, COUNTRIES, scopeBbox } from "@/data/registry";
+import { useQuery } from "@tanstack/react-query";
+import type { MapProps } from "./RiskMapInner";
+import { getCountry, scopeBbox } from "@/data/registry";
 import { getAvailability } from "@/data/sources";
 import { DATASETS } from "@/data/datasets";
 import { CONNECTED, useSafeLocations, useFireReports, useHotspots, useRiskMap, useShelters } from "@/services/api/hooks";
 import { apiBaseUrl } from "@/services/api/client";
-import { getSiteContext } from "@/lib/site.functions";
-import { getPowerDaily } from "@/lib/power.functions";
+import { getPowerGrid, type GridParam, type GridResult } from "@/lib/grid.functions";
+import { GRID_SCALE, LC_LEGEND, POP_BREAKS, SOIL_PARAMS, WEATHER_PARAMS, scaleColor, type RasterId } from "@/data/rasters";
 import { LAYERS, defaultLayerState, type LayerDef, type LayerId, type LayerState, type LayerStatus } from "./layers";
 
 const Inner = lazy(() => import("./RiskMapInner"));
@@ -20,7 +20,6 @@ function Map(props: MapProps) {
 
 type Q = { isLoading: boolean; isFetching?: boolean; isError: boolean };
 const st = (kind: LayerStatus["kind"], text: string): LayerStatus => ({ kind, text });
-const SITE_LAYERS: LayerId[] = ["soil", "landcover", "terrain", "population"];
 
 /**
  * Map with independent layer switches. Each layer fetches only while switched on and
@@ -51,13 +50,15 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
     grid3_religious: g("grid3_religious", "religious_center"), grid3_settlement: g("grid3_settlement", "settlement"),
   };
 
-  // Point-sampled context layers at region reference points in scope
-  const pts = COUNTRIES.filter((c) => !countryCode || c.code === countryCode)
-    .flatMap((c) => c.regions.filter((r) => !regionId || r.id === regionId).map((r) => ({ label: `${r.name}, ${c.name}`, lat: r.center[0], lon: r.center[1] })));
-  const siteOn = SITE_LAYERS.some((id) => on[id]);
-  const siteQ = useQueries({ queries: pts.map((p) => ({ queryKey: ["site", [p.lat, p.lon]], enabled: siteOn, staleTime: 12 * 3600_000, retry: 1, queryFn: () => getSiteContext({ data: { lat: p.lat, lon: p.lon } }) })) });
-  const powQ = useQueries({ queries: pts.map((p) => ({ queryKey: ["power", [p.lat, p.lon], 14], enabled: on.weather, staleTime: 3 * 3600_000, retry: 1, queryFn: () => getPowerDaily({ data: { lat: p.lat, lon: p.lon, days: 14 } }) })) });
-  const sitePoints: SitePoint[] = pts.map((p, i) => ({ ...p, site: siteQ[i]?.data, power: powQ[i]?.data }));
+  // NASA POWER native grid (weather + soil moisture), one variable at a time, only while on
+  const [wVar, setWVar] = useState<GridParam>("T2M_MAX");
+  const [sVar, setSVar] = useState<GridParam>("GWETROOT");
+  const weatherQ = useQuery({ queryKey: ["grid", bbox, wVar], enabled: on.weather, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: wVar } }) });
+  const soilQ = useQuery({ queryKey: ["grid", bbox, sVar], enabled: on.soil, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: sVar } }) });
+
+  // Raster image layers report whether the source actually delivered an image
+  const [raster, setRaster] = useState<Partial<Record<RasterId | "terrain", boolean>>>({});
+  const onRaster = (id: RasterId | "terrain", ok: boolean) => setRaster((r) => (r[id] === ok ? r : { ...r, [id]: ok }));
 
   // ---------- statuses ----------
   const backend = !!apiBaseUrl();
@@ -74,14 +75,15 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
     if (qs.some((q) => q.isError)) return st("partial", `${n.toLocaleString()} ${noun} · some areas unavailable`);
     return n === 0 ? st("empty", `No ${noun} in this area`) : st("ok", `${n.toLocaleString()} ${noun}`);
   };
-  const pointStatus = (qs: Q[], ok: (i: number) => boolean, noun: string): LayerStatus => {
-    if (pts.length === 0) return st("unavailable", "No reference points for this area");
-    if (qs.some((q) => q.isLoading)) return st("loading", "Loading…");
-    const good = pts.filter((_, i) => ok(i)).length;
-    if (good === 0) return st("error", "Data temporarily unavailable");
-    return good < pts.length ? st("partial", `${good} of ${pts.length} ${noun}`) : st("ok", `${good} ${noun}`);
+  const gridStatus = (q: { isLoading: boolean; isError: boolean; data?: GridResult | undefined }): LayerStatus => {
+    if (q.isLoading) return st("loading", "Loading grid…");
+    const d = q.data;
+    if (q.isError || !d || d.status === "error") return st("error", d?.message ?? "Data temporarily unavailable");
+    if (d.status === "limited") return st("unavailable", d.message ?? "Limited spatial coverage");
+    const real = d.cells.filter((c) => c.value !== null).length;
+    return st(real < d.cells.length ? "partial" : "ok", `${real.toLocaleString()} of ${d.cells.length.toLocaleString()} grid cells with values · ${d.date} · 0.5° × 0.625°`);
   };
-  const siteOk = (k: "landCover" | "terrain" | "population" | "drought") => (i: number) => siteQ[i]?.data?.[k].status === "ok";
+  const rasterStatus = (id: RasterId | "terrain", ok: string): LayerStatus => raster[id] === undefined ? st("loading", "Loading map image…") : raster[id] ? st("ok", ok) : st("error", "Data temporarily unavailable");
   const status = (l: LayerDef): LayerStatus => {
     if (!on[l.id]) return st("off", "Off");
     switch (l.id) {
@@ -100,11 +102,11 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
         const any = countryCode ? !!avail?.shelterDataAvailable : false;
         return any ? st("ok", "Available") : st("unavailable", countryCode ? "No verified data available for this country" : "No verified data available");
       }
-      case "weather": return pointStatus(powQ, (i) => !!powQ[i]?.data?.latest, "region points");
-      case "soil": return pointStatus(siteQ, siteOk("drought"), "region points");
-      case "landcover": return pointStatus(siteQ, siteOk("landCover"), "region points");
-      case "terrain": return pointStatus(siteQ, siteOk("terrain"), "region points");
-      case "population": return pointStatus(siteQ, siteOk("population"), "region points");
+      case "weather": return gridStatus(weatherQ);
+      case "soil": return gridStatus(soilQ);
+      case "landcover": return rasterStatus("landcover", "Raster · 10 m source, shown at screen resolution · click for class");
+      case "terrain": return rasterStatus("terrain", "Hillshade raster · click for elevation & slope (SRTM 30 m)");
+      case "population": return rasterStatus("population", "Raster · 1 km density, 2020 · click for value");
       default: {
         if (!countryCode) return st("unavailable", "Select a country to load");
         if (!avail?.layers.some((x) => x.locationType === l.grid3Type)) return st("unavailable", "Unavailable for this country");
@@ -134,8 +136,8 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
       {open && <LayerPanel layers={visible} on={on} statuses={statuses} toggle={(id) => setOn((s) => ({ ...s, [id]: !s[id] }))} />}
       <Map countryCode={countryCode} regionId={regionId} riskFilter={riskFilter} height={height} on={{ ...on, ...Object.fromEntries(LAYERS.filter((l) => !visible.includes(l)).map((l) => [l.id, false])) } as LayerState}
         risk={areas.flatMap((a) => a.risk.data ?? [])} shelters={areas.flatMap((a) => a.shelters.data ?? [])} reports={areas.flatMap((a) => a.reports.data ?? [])}
-        hotspots={fires.data?.hotspots} locations={locations} sitePoints={sitePoints} />
-      <Legend layers={visible.filter((l) => on[l.id])} statuses={statuses} />
+        hotspots={fires.data?.hotspots} locations={locations} grids={{ weather: weatherQ.data, soil: soilQ.data }} onRaster={onRaster} />
+      <Legend layers={visible.filter((l) => on[l.id])} statuses={statuses} vars={{ weather: [wVar, setWVar], soil: [sVar, setSVar] }} />
     </div>
   );
 }
@@ -184,14 +186,31 @@ function Swatch({ color, shape }: { color: string; shape: string }) {
   return <span className="h-2.5 w-2.5 rounded-full" style={{ background: c }} />;
 }
 
-function Legend({ layers, statuses }: { layers: LayerDef[]; statuses: Record<LayerId, LayerStatus> }) {
+type VarState = [GridParam, (p: GridParam) => void];
+function Ramp({ p }: { p: GridParam }) {
+  const sc = GRID_SCALE[p];
+  return <span className="flex items-center gap-1 text-muted-foreground">{sc.min}<span className="h-2 w-20 rounded-sm" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => scaleColor(p, sc.min + t * (sc.max - sc.min))).join(",")})` }} />{sc.max} {sc.unit}</span>;
+}
+function VarPick({ v, opts }: { v: VarState; opts: GridParam[] }) {
+  return <select aria-label="Variable" value={v[0]} onChange={(e) => v[1](e.target.value as GridParam)} className="rounded-sm border bg-card px-1 py-0.5">{opts.map((p) => <option key={p} value={p}>{GRID_SCALE[p].label}</option>)}</select>;
+}
+function Extra({ id, vars }: { id: LayerId; vars: { weather: VarState; soil: VarState } }) {
+  if (id === "weather") return <><VarPick v={vars.weather} opts={WEATHER_PARAMS} /><Ramp p={vars.weather[0]} /><span className="text-muted-foreground">Real POWER grid-cell values, not interpolated</span></>;
+  if (id === "soil") return <><VarPick v={vars.soil} opts={SOIL_PARAMS} /><Ramp p={vars.soil[0]} /><span className="text-muted-foreground">0 = dry, 1 = saturated</span></>;
+  if (id === "landcover") return <>{LC_LEGEND.map(([c, l]) => <span key={l} className="flex items-center gap-1 text-muted-foreground"><span className="h-2.5 w-2.5" style={{ background: c }} />{l}</span>)}</>;
+  if (id === "population") return <>{POP_BREAKS.map(([a, b, c]) => <span key={a} className="flex items-center gap-1 text-muted-foreground"><span className="h-2.5 w-2.5" style={{ background: `rgb(${c.join(",")})` }} />{b > 1e6 ? `${a.toLocaleString()}+` : `${a}–${b.toLocaleString()}`} /km²</span>)}<span className="text-muted-foreground">Estimated density, not exact counts</span></>;
+  if (id === "terrain") return <span className="text-muted-foreground">Shaded relief (light/dark = terrain shape)</span>;
+  return null;
+}
+
+function Legend({ layers, statuses, vars }: { layers: LayerDef[]; statuses: Record<LayerId, LayerStatus>; vars: { weather: VarState; soil: VarState } }) {
   if (layers.length === 0) return <p className="mt-2 text-xs text-muted-foreground">All layers are off.</p>;
   return (
     <div className="mt-2 space-y-1 text-xs">
       {layers.map((l) => (
         <div key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="font-medium">{l.icon} {l.label}</span>
-          {l.legend.map((e) => <span key={e.label} className="flex items-center gap-1.5 text-muted-foreground"><Swatch color={e.color} shape={e.shape} />{e.label}</span>)}
+          {["weather", "soil", "landcover", "population", "terrain"].includes(l.id) ? <Extra id={l.id} vars={vars} /> : l.legend.map((e) => <span key={e.label} className="flex items-center gap-1.5 text-muted-foreground"><Swatch color={e.color} shape={e.shape} />{e.label}</span>)}
           <span className={tone[statuses[l.id].kind]}>· {statuses[l.id].text}</span>
         </div>
       ))}

@@ -1,19 +1,22 @@
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, useMap } from "react-leaflet";
-import { useEffect } from "react";
+import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, ImageOverlay, useMap, useMapEvents } from "react-leaflet";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { COUNTRIES } from "@/data/registry";
 import { riskLevel } from "@/data/types";
 import type { ApiReport, ApiShelter, RiskPoint } from "@/services/api/endpoints";
 import type { Hotspot } from "@/lib/firms.functions";
 import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type SafeLocation } from "@/data/locations";
-import type { SiteContext } from "@/lib/site.functions";
-import type { PowerResult } from "@/lib/power.functions";
+import { getPixelInfo, type PixelInfo } from "@/lib/site.functions";
+import type { GridResult } from "@/lib/grid.functions";
+import { GRID_SCALE, HILLSHADE_TILES, rasterUrl, scaleColor, type RasterId } from "@/data/rasters";
 import type { LayerState } from "./layers";
 
-export interface SitePoint { label: string; lat: number; lon: number; site?: SiteContext | undefined; power?: PowerResult | undefined }
+export type RasterStatus = (id: RasterId | "terrain", ok: boolean) => void;
 export interface MapProps {
   countryCode?: string | undefined; regionId?: string | undefined; on: LayerState; riskFilter?: string | undefined; height?: number | undefined;
-  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined; sitePoints?: SitePoint[] | undefined;
+  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined;
+  grids?: { weather?: GridResult | undefined; soil?: GridResult | undefined }; onRaster?: RasterStatus;
 }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
@@ -26,7 +29,7 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], sitePoints = [] }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], grids = {}, onRaster }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
@@ -38,6 +41,12 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
         <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" className="phoenix-tiles" />
         <Fly center={center} zoom={zoom} />
+        {on.terrain && <TileLayer url={HILLSHADE_TILES} opacity={0.55} attribution="Hillshade: Esri, USGS, NASA SRTM and others" eventHandlers={{ tileload: () => onRaster?.("terrain", true), tileerror: () => onRaster?.("terrain", false) }} />}
+        {on.landcover && <ViewRaster id="landcover" opacity={0.6} onRaster={onRaster} />}
+        {on.population && <ViewRaster id="population" opacity={0.65} onRaster={onRaster} />}
+        {on.weather && grids.weather && <GridCells g={grids.weather} />}
+        {on.soil && grids.soil && <GridCells g={grids.soil} />}
+        {(on.landcover || on.terrain || on.population) && <PixelClick on={on} />}
         {COUNTRIES.filter((c) => !countryCode || c.code === countryCode).map((c) => (
           <CircleMarker key={c.code} center={c.center} radius={4} pathOptions={{ color: css("--muted-foreground"), weight: 1, fillOpacity: 0.3 }}>
             <Popup><b>{c.name}</b><br />{c.coverage === "active" ? "Real data coverage" : "Coverage: Coming Soon"}</Popup>
@@ -109,40 +118,58 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
             <Popup><b>Community fire report</b> (unverified)<br />{na(r.description)}<br />{na(r.reportedAt)}</Popup>
           </CircleMarker>
         ))}
-        <SiteMarkers points={sitePoints} on={on} />
       </MapContainer>
     </div>
   );
 }
 
-const SITE_KEYS = [["weather", "--layer-weather"], ["soil", "--layer-soil"], ["landcover", "--layer-landcover"], ["terrain", "--layer-terrain"], ["population", "--layer-pop"]] as const;
 
-/** One marker per enabled context layer per region point, slightly offset so layers never merge. */
-function SiteMarkers({ points, on }: { points: SitePoint[]; on: LayerState }) {
-  const active = SITE_KEYS.filter(([k]) => on[k]);
-  return <>{points.flatMap((p) => active.map(([k, v], i) => {
-    const off = (i - (active.length - 1) / 2) * 0.12;
-    const body = siteBody(k, p);
-    if (!body) return null;
-    const c = css(v);
-    return (
-      <Rectangle key={`${k}-${p.lat}-${p.lon}`} bounds={[[p.lat - 0.05, p.lon + off - 0.05], [p.lat + 0.05, p.lon + off + 0.05]]} pathOptions={{ color: c, fillColor: c, fillOpacity: 0.9, weight: 3 }}>
-        <Popup><b>{p.label}</b><br />{body}<br />{p.lat.toFixed(3)}, {p.lon.toFixed(3)} (region reference point)</Popup>
-      </Rectangle>
-    );
-  }))}</>;
+/** Source-rendered raster image for the visible extent; re-requested on pan/zoom so detail follows zoom. */
+function ViewRaster({ id, opacity, onRaster }: { id: RasterId; opacity: number; onRaster?: RasterStatus | undefined }) {
+  const map = useMap();
+  const read = () => {
+    const b = map.getBounds(), sz = map.getSize();
+    const w = Math.max(-180, b.getWest()), e = Math.min(180, b.getEast()), s = Math.max(-85, b.getSouth()), n = Math.min(85, b.getNorth());
+    return { bounds: [[s, w], [n, e]] as [[number, number], [number, number]], url: rasterUrl(id, { w, s, e, n }, [Math.min(2048, sz.x), Math.min(2048, sz.y)]) };
+  };
+  const [v, setV] = useState(read);
+  useMapEvents({ moveend: () => setV(read()) });
+  return <ImageOverlay key={v.url} url={v.url} bounds={v.bounds} opacity={opacity} eventHandlers={{ load: () => onRaster?.(id, true), error: () => onRaster?.(id, false) }} />;
 }
 
-function siteBody(k: (typeof SITE_KEYS)[number][0], p: SitePoint) {
-  const s = p.site;
-  if (k === "weather") {
-    const d = p.power; if (!d?.latest) return null; const v = d.latest.values;
-    return <>NASA POWER weather · {d.latest.date}<br />Max {fmt(v.T2M_MAX, "°C")} · Min {fmt(v.T2M_MIN, "°C")} · RH {fmt(v.RH2M, "%")}<br />Wind {fmt(v.WS2M, " m/s")} · Rain {fmt(v.PRECTOTCORR, " mm")}<br />Source: {d.source} · {d.dataset}</>;
-  }
-  if (!s) return null;
-  if (k === "soil") { const x = s.drought; if (x.status !== "ok") return null; return <>Soil moisture · {x.date}<br />Root zone {fmt(x.soilMoistureRoot, "")} · Surface {fmt(x.soilMoistureTop, "")} (0 dry – 1 saturated)<br />Source: {x.source} · {x.product}</>; }
-  if (k === "landcover") { const x = s.landCover; if (x.status !== "ok") return null; return <>Land cover: {x.landCoverLabel} (code {x.landCoverCode})<br />Source: {x.source} · {x.product}</>; }
-  if (k === "terrain") { const x = s.terrain; if (x.status !== "ok") return null; return <>Elevation {fmt(x.elevation, " m")} · Slope {fmt(x.slope, "°")} · Aspect {fmt(x.aspect, "°")}<br />Source: {x.source} · {x.product}</>; }
-  const x = s.population; if (x.status !== "ok") return null;
-  return <>Population ≈ {x.population?.toLocaleString() ?? "Missing"} within ~{x.areaKm2} km² (estimate, not an exact count)<br />Source: {x.source} · {x.product}</>;
+/** NASA POWER native grid cells — each rectangle is one real POWER cell; empty cells stay grey. */
+function GridCells({ g }: { g: GridResult }) {
+  const sc = GRID_SCALE[g.param];
+  return <>{g.cells.map((c) => (
+    <Rectangle key={`${g.param}${c.lat},${c.lon}`} bounds={[[c.lat - g.cellLat / 2, c.lon - g.cellLon / 2], [c.lat + g.cellLat / 2, c.lon + g.cellLon / 2]]}
+      pathOptions={{ stroke: false, fillColor: c.value === null ? css("--unavailable") : scaleColor(g.param, c.value), fillOpacity: c.value === null ? 0.15 : 0.45 }}>
+      <Popup><b>{sc.label}</b>: {c.value === null ? "Missing" : `${c.value} ${sc.unit}`}<br />Date: {g.date ?? "Data unavailable"}<br />Cell centre {c.lat}, {c.lon} (0.5° × 0.625° grid cell)<br />Source: {g.source} · {g.dataset} · {g.param}<br />Retrieved {g.retrievedAt.slice(0, 16).replace("T", " ")} UTC</Popup>
+    </Rectangle>
+  ))}</>;
+}
+
+/** Click anywhere: show the real raster pixel values for the enabled raster layers. */
+function PixelClick({ on }: { on: LayerState }) {
+  const fetchInfo = useServerFn(getPixelInfo);
+  const [hit, setHit] = useState<{ lat: number; lon: number; info?: PixelInfo; err?: boolean } | null>(null);
+  useMapEvents({
+    click: async (e) => {
+      const lat = Math.round(e.latlng.lat * 1e4) / 1e4, lon = Math.round(e.latlng.lng * 1e4) / 1e4;
+      const layers = (["landcover", "terrain", "population"] as const).filter((k) => on[k]);
+      setHit({ lat, lon });
+      try { setHit({ lat, lon, info: await fetchInfo({ data: { lat, lon, layers: [...layers] } }) }); } catch { setHit({ lat, lon, err: true }); }
+    },
+  });
+  if (!hit) return null;
+  const i = hit.info;
+  return (
+    <Popup position={[hit.lat, hit.lon]} eventHandlers={{ remove: () => setHit(null) }}>
+      <b>Location {hit.lat}, {hit.lon}</b><br />
+      {hit.err ? "Data temporarily unavailable" : !i ? "Loading values…" : <>
+        {i.landCover && <>Land cover: {i.landCover.status === "ok" ? `${i.landCover.landCoverLabel} (code ${i.landCover.landCoverCode})` : "Data unavailable"}<br /><small>{i.landCover.source} · {i.landCover.product}</small><br /></>}
+        {i.terrain && <>Elevation {fmt(i.terrain.elevation, " m")} · Slope {fmt(i.terrain.slope, "°")} · Aspect {fmt(i.terrain.aspect, "°")}<br /><small>{i.terrain.source} · {i.terrain.product}</small><br /></>}
+        {i.density && <>Population density: {i.density.value === null ? "Data unavailable" : `≈ ${i.density.value.toLocaleString()} people/km²`} (estimate)<br /><small>{i.density.source} · {i.density.product}</small></>}
+      </>}
+    </Popup>
+  );
 }
