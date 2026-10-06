@@ -8,7 +8,7 @@ export interface ApiAlert { id: string; kind: "risk" | "detection"; title: strin
 export interface ApiReport { id: string; lat: number; lon: number; description: string | null; reportedAt: string | null }
 export interface FwiValue { value: number | null; date: string | null; raw: Record<string, unknown> }
 
-export interface AreaQuery { country: string; region?: string | undefined; bbox?: [number, number, number, number] | undefined }
+export interface AreaQuery { country?: string | undefined; region?: string | undefined; bbox?: [number, number, number, number] | undefined }
 const q = (a: AreaQuery) => ({ country: a.country, region: a.region, bbox: a.bbox?.join(",") });
 
 const hasCoords = <T extends { lat: number; lon: number }>(x: T | null): x is T => !!x && Number.isFinite(x.lat) && Number.isFinite(x.lon);
