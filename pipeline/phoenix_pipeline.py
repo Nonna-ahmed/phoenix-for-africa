@@ -168,8 +168,8 @@ def stage_static(wid):
     gy, gx = np.full(E.shape, np.nan), np.full(E.shape, np.nan)
     a = E.values; gy[1:-1, :] = (a[:-2, :] - a[2:, :]) / (2 * dy); gx[:, 1:-1] = (a[:, 2:] - a[:, :-2]) / (2 * dx)
     slope = np.degrees(np.arctan(np.hypot(gx, gy))); aspect = (np.degrees(np.arctan2(-gx, gy)) + 360) % 360
-    sl = pd.DataFrame(slope, index=E.index, columns=E.columns).stack(dropna=False).rename("slope_deg_1km")
-    asp = pd.DataFrame(aspect, index=E.index, columns=E.columns).stack(dropna=False).rename("aspect_deg_1km")
+    sl = pd.DataFrame(slope, index=E.index, columns=E.columns).stack(future_stack=True).rename("slope_deg_1km")
+    asp = pd.DataFrame(aspect, index=E.index, columns=E.columns).stack(future_stack=True).rename("aspect_deg_1km")
     s = s.merge(sl.reset_index(), on=["row", "col"], how="left").merge(asp.reset_index(), on=["row", "col"], how="left")
     s["terrain_source"] = "NASA SRTM 30 m via OpenTopoData at cell centroid; slope/aspect from 1 km centroid differences"
     s.to_parquet(f"{OUT}/static_features_{wid}.parquet", index=False)
