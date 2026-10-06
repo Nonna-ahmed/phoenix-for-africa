@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { MapProps } from "./RiskMapInner";
-import { getCountry, COUNTRIES, scopeBbox } from "@/data/registry";
+import { getCountry, scopeBbox } from "@/data/registry";
 import { getAvailability } from "@/data/sources";
 import { DATASETS } from "@/data/datasets";
 import { CONNECTED, useSafeLocations, useFireReports, useHotspots, useRiskMap, useShelters } from "@/services/api/hooks";
