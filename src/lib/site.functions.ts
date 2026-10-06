@@ -192,3 +192,50 @@ export const getPixelInfo = createServerFn({ method: "GET" })
     ]);
     return out;
   });
+
+export interface AreaSamplePoint { lat: number; lon: number; landCover: string | null; elevationM: number | null; densityPerKm2: number | null }
+export interface AreaSample {
+  bbox: [number, number, number, number]; points: AreaSamplePoint[]; retrievedAt: string;
+  landCoverCounts: Record<string, number>; elevation: { min: number | null; max: number | null }; density: { min: number | null; max: number | null; mean: number | null };
+  sources: { landCover: string; terrain: string; population: string };
+}
+
+/** Real values at a 3×3 grid of sample points across an area (no interpolation between points). */
+export const getAreaSample = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ bbox: z.tuple([z.number().min(-25), z.number().min(-40), z.number().max(60), z.number().max(40)]) }).parse(d))
+  .handler(async ({ data }): Promise<AreaSample> => {
+    const [w, s, e, n] = data.bbox;
+    const pts: [number, number][] = [];
+    for (const fy of [1 / 6, 0.5, 5 / 6]) for (const fx of [1 / 6, 0.5, 5 / 6]) pts.push([r4(s + (n - s) * fy), r4(w + (e - w) * fx)]);
+    const ident = async (url: string, lat: number, lon: number, extra = "") => {
+      try {
+        const geom = encodeURIComponent(JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } }));
+        const j = await getJson(`${url}/identify?geometry=${geom}&geometryType=esriGeometryPoint&returnCatalogItems=false${extra}&f=json`);
+        const v = Number(j?.value); return Number.isFinite(v) ? v : null;
+      } catch { return null; }
+    };
+    let elev: (number | null)[] = pts.map(() => null);
+    const elevP = getJson(`https://api.opentopodata.org/v1/srtm30m?locations=${pts.map((p) => p.join(",")).join("|")}`)
+      .then((j) => { elev = (j?.results ?? []).map((r: { elevation: number | null }) => (typeof r.elevation === "number" ? r.elevation : null)); })
+      .catch((err) => console.error("sample terrain", err));
+    const LC = "https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer";
+    const [lcs, dens] = await Promise.all([
+      Promise.all(pts.map(([la, lo]) => ident(LC, la, lo))),
+      Promise.all(pts.map(([la, lo]) => ident(WORLDPOP_DENSITY_URL, la, lo, "&time=1577836800000"))),
+      elevP,
+    ]);
+    const points = pts.map(([lat, lon], i) => {
+      const code = lcs[i]; const d = dens[i];
+      return { lat, lon, landCover: code !== null && code !== undefined && IO_CLASSES[code] ? IO_CLASSES[code]![1] : null, elevationM: elev[i] ?? null, densityPerKm2: d !== null && d !== undefined && d >= 0 ? Math.round(d) : null };
+    });
+    const nums = (k: "elevationM" | "densityPerKm2") => points.map((p) => p[k]).filter((v): v is number => v !== null);
+    const el = nums("elevationM"), de = nums("densityPerKm2");
+    const landCoverCounts: Record<string, number> = {};
+    for (const p of points) { const k = p.landCover ?? "Unavailable"; landCoverCounts[k] = (landCoverCounts[k] ?? 0) + 1; }
+    return {
+      bbox: data.bbox, points, retrievedAt: now(), landCoverCounts,
+      elevation: { min: el.length ? Math.min(...el) : null, max: el.length ? Math.max(...el) : null },
+      density: { min: de.length ? Math.min(...de) : null, max: de.length ? Math.max(...de) : null, mean: de.length ? Math.round(de.reduce((a, b) => a + b, 0) / de.length) : null },
+      sources: { landCover: "Esri / Impact Observatory Sentinel-2 10 m land cover", terrain: "NASA SRTM 30 m via OpenTopoData", population: "WorldPop population density 1 km (2020)" },
+    };
+  });

@@ -17,7 +17,7 @@ export type RasterStatus = (id: RasterId | "terrain", ok: boolean) => void;
 export interface MapProps {
   countryCode?: string | undefined; regionId?: string | undefined; on: LayerState; riskFilter?: string | undefined; height?: number | undefined;
   risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined;
-  grids?: { weather?: GridResult | undefined; soil?: GridResult | undefined }; onRaster?: RasterStatus; hospitals?: OsmHospital[] | undefined; roads?: OsmRoad[] | undefined;
+  grids?: { weather?: GridResult | undefined; soil?: GridResult | undefined }; onRaster?: RasterStatus; hospitals?: OsmHospital[] | undefined; roads?: OsmRoad[] | undefined; onBounds?: ((b: [number, number, number, number]) => void) | undefined;
 }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
@@ -30,7 +30,7 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], grids = {}, onRaster, hospitals = [], roads = [] }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], grids = {}, onRaster, hospitals = [], roads = [], onBounds }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
@@ -42,6 +42,7 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
         <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" className="phoenix-tiles" />
         <Fly center={center} zoom={zoom} />
+        {onBounds && <BoundsWatch onBounds={onBounds} />}
         {on.terrain && <TileLayer url={HILLSHADE_TILES} opacity={0.55} attribution="Hillshade: Esri, USGS, NASA SRTM and others" eventHandlers={{ tileload: () => onRaster?.("terrain", true), tileerror: () => onRaster?.("terrain", false) }} />}
         {on.landcover && <ViewRaster id="landcover" opacity={0.6} onRaster={onRaster} />}
         {on.population && <ViewRaster id="population" opacity={0.65} onRaster={onRaster} />}
@@ -192,4 +193,13 @@ function PixelClick({ on }: { on: LayerState }) {
 
 function hospPopup(h: OsmHospital) {
   return <><b>{h.name ?? "Name unavailable"}</b><br />Type: {h.amenity}{h.healthcare && h.healthcare !== h.amenity ? ` · ${h.healthcare}` : ""} — critical infrastructure, not an emergency shelter<br />Operator: {na(h.operator)} · Emergency dept: {na(h.emergency)}<br />{h.lat.toFixed(4)}, {h.lon.toFixed(4)}<br />Source: OpenStreetMap contributors (ODbL) · {h.id}<br />Verification: community-mapped, unverified</>;
+}
+
+/** Reports the visible map area [west, south, east, north] after every pan/zoom. */
+function BoundsWatch({ onBounds }: { onBounds: (b: [number, number, number, number]) => void }) {
+  const map = useMap();
+  const send = () => { const b = map.getBounds(); const r = (n: number) => Math.round(n * 1000) / 1000; onBounds([r(b.getWest()), r(b.getSouth()), r(b.getEast()), r(b.getNorth())]); };
+  useEffect(() => { send(); }, []);
+  useMapEvents({ moveend: send });
+  return null;
 }

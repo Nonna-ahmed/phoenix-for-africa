@@ -26,9 +26,10 @@ const st = (kind: LayerStatus["kind"], text: string): LayerStatus => ({ kind, te
  * Map with independent layer switches. Each layer fetches only while switched on and
  * reports its own availability; one failing source never hides another layer.
  */
-export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, height, days = 1, show }: {
+export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, height, days = 1, show, onBounds }: {
   countryCode?: string | undefined; regionId?: string | undefined; initialLayers?: Partial<LayerState>;
   riskFilter?: string; height?: number; days?: number; show?: LayerId[];
+  onBounds?: (b: [number, number, number, number]) => void;
 }) {
   const [on, setOn] = useState<LayerState>(() => defaultLayerState(initialLayers));
   const [open, setOpen] = useState(false);
