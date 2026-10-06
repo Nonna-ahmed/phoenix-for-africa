@@ -206,7 +206,7 @@ export const getAreaSample = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<AreaSample> => {
     const [w, s, e, n] = data.bbox;
     const pts: [number, number][] = [];
-    const n = data.n ?? 3; const fr = Array.from({ length: n }, (_, i) => (i + 0.5) / n);
+    const gn = data.n ?? 3; const fr = Array.from({ length: gn }, (_, i) => (i + 0.5) / gn);
     for (const fy of fr) for (const fx of fr) pts.push([r4(s + (n - s) * fy), r4(w + (e - w) * fx)]);
     const ident = async (url: string, lat: number, lon: number, extra = "") => {
       try {
