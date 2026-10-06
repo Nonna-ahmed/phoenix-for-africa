@@ -1,3 +1,4 @@
+import { getFirmsHotspots } from "@/lib/firms.functions";
 import { useQuery } from "@tanstack/react-query";
 import { apiBaseUrl } from "./client";
 import { getAlerts, getFireReports, getFwi, getRiskMap, getShelters, type AreaQuery } from "./endpoints";
@@ -36,4 +37,9 @@ export function useRegionSummary(country: string, region: { id: string; bbox?: [
     ? dates.slice(-7).map((d) => ({ date: d, p: Math.max(...withP.filter((x) => x.date === d).map((x) => x.probability!)) })).filter((x) => Number.isFinite(x.p))
     : [];
   return { q, points: pts, maxProbability: top?.probability ?? null, latestDate: latest, environment: envPt?.environment ?? null, trend };
+}
+
+/** NASA FIRMS hotspots via our server function (MAP_KEY stays server-side). */
+export function useHotspots(bbox: [number, number, number, number] | undefined, days = 1, enabled = true) {
+  return useQuery({ ...opts, staleTime: 15 * 60_000, queryKey: ["firms", bbox, days], enabled, queryFn: () => getFirmsHotspots({ data: { bbox, days } }) });
 }

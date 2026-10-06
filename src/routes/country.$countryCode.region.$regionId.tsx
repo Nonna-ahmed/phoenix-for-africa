@@ -53,7 +53,7 @@ function RegionPage() {
       </div>
       <EnvPanel env={s.environment} date={s.latestDate} />
       <div className="grid gap-6 md:grid-cols-2">
-        <FwiPanel countryCode={c.code} regionId={r.id} bbox={r.bbox} /><DetectionList />
+        <FwiPanel countryCode={c.code} regionId={r.id} bbox={r.bbox} /><DetectionList countryCode={c.code} regionId={r.id} />
         <AlertList countryCode={c.code} regionId={r.id} /><ShelterList countryCode={c.code} regionId={r.id} />
         <ReportList countryCode={c.code} regionId={r.id} />
       </div>

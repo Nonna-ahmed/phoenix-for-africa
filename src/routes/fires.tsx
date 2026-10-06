@@ -10,7 +10,7 @@ export const Route = createFileRoute("/fires")({
   ] }),
   component: () => (
     <div className="space-y-6">
-      <PageHeader eyebrow="NASA FIRMS · VIIRS / MODIS" title="Satellite Fire Detections">“Where has satellite data detected a thermal anomaly?” Detections can have multiple causes and are not confirmed fires.</PageHeader>
+      <PageHeader eyebrow="NASA FIRMS · VIIRS / MODIS" title="Satellite Hotspots">“Where has satellite data detected a thermal anomaly?” Hotspots are not confirmed ground fires — confirmation comes only from verified ground reports.</PageHeader>
       <RiskMap layers={{ risk: false, fires: true, shelters: false, reports: false, boundaries: true }} height={460} />
       <DetectionList />
     </div>

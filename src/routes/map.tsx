@@ -34,16 +34,16 @@ function MapPage() {
           <select className={sel} value={risk} onChange={(e) => setRisk(e.target.value)}>{["ALL", "HIGH", "MEDIUM", "LOW"].map((r) => <option key={r}>{r}</option>)}</select></label>
         <label className="label-mono flex flex-col gap-1">Time
           <select className={sel} value={time} onChange={(e) => setTime(e.target.value)}>
-            <option value="current">Current</option><option value="24h">24 hours</option><option value="7d">7 days</option><option value="hist">Historical</option>
+            <option value="current">Last 24 hours</option><option value="48h">48 hours</option><option value="7d">5 days (max)</option>
           </select></label>
         <div className="flex flex-wrap gap-2">
-          {([["risk", "Predicted Risk"], ["fires", "Active Fires"], ["shelters", "Shelters"], ["reports", "Fire Reports"], ["boundaries", "Boundaries"]] as const).map(([k, l]) => (
+          {([["risk", "Predicted Risk"], ["fires", "Satellite Hotspots"], ["shelters", "Shelters"], ["reports", "Fire Reports"], ["boundaries", "Boundaries"]] as const).map(([k, l]) => (
             <button key={k} onClick={() => toggle(k)} className={`rounded-sm border px-2.5 py-1.5 text-sm ${layers[k] ? "border-primary bg-primary/15 text-foreground" : "text-muted-foreground"}`}>{l}</button>
           ))}
         </div>
       </div>
-      {time !== "current" && <p className="mb-2 text-sm text-muted-foreground">Time-window data unavailable until the satellite feed is connected; showing current demo snapshot.</p>}
-      <RiskMap countryCode={country || undefined} layers={layers} riskFilter={risk} height={620} />
+      <p className="mb-2 text-xs text-muted-foreground">Time window applies to satellite hotspots (NASA FIRMS near-real-time). Predicted risk shows the latest model run.</p>
+      <RiskMap countryCode={country || undefined} layers={layers} riskFilter={risk} height={620} days={time === "7d" ? 5 : time === "48h" ? 2 : 1} />
       <MapLegend />
     </div>
   );
