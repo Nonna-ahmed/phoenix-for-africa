@@ -9,7 +9,7 @@ export type IntegrationState = "live" | "planned" | "backend";
 export interface Dataset {
   id: string; category: DatasetCategory; datasetName: string; provider: string; coverage: string;
   updateFrequency: string; spatialResolution: string; temporalResolution: string; license: string; sourceUrl: string;
-  state: IntegrationState; phase: 1 | 2 | 3; probe?: "firms" | "power" | "landcover" | "terrain" | "population" | "soil" | "grid3" | "osm" | "osm-roads";
+  state: IntegrationState; phase: 1 | 2 | 3; probe?: "firms" | "power" | "landcover" | "terrain" | "population" | "soil" | "grid3" | "osm" | "osm-roads" | "ndvi";
   note?: string;
 }
 

@@ -13,7 +13,7 @@ export interface NdviPixel { lat: number; lon: number; ndvi: number | null; qa: 
 export interface NdviWindow { lat: number; lon: number; status: "ok" | "error"; pixels: NdviPixel[] }
 export interface VegetationResult {
   status: "ok" | "error" | "limited";
-  message?: string;
+  message?: string | undefined;
   product: string; productVersion: string; source: string; sourceUrl: string; variable: "NDVI";
   resolutionM: number; compositeDays: number; compositeDate: string | null; modisDate: string | null;
   bbox: [number, number, number, number]; method: string; pixelSizeDeg: number;

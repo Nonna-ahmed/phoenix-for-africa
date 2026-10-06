@@ -8,6 +8,7 @@ import { PageHeader, Section } from "@/components/phoenix/ui";
 import { Note } from "@/components/phoenix/ApiState";
 import { useHotspots } from "@/services/api/hooks";
 import { getAreaSample } from "@/lib/site.functions";
+import { getVegetation } from "@/lib/vegetation.functions";
 import { getPowerGrid, type GridParam, type GridResult } from "@/lib/grid.functions";
 import { getOsmHospitals, getOsmRoads } from "@/lib/osm.functions";
 import { GRID_SCALE } from "@/data/rasters";
@@ -49,10 +50,11 @@ function BriefPage() {
   const fires = useHotspots(bbox, days);
   const grids = WVARS.map((p) => useQuery({ queryKey: ["grid", bbox, p], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: p } }) }));
   const soilQ = useQuery({ queryKey: ["grid", bbox, "GWETROOT"], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: "GWETROOT" } }) });
+  const veg = useQuery({ queryKey: ["ndvi", bbox], staleTime: 24 * 3600_000, retry: 1, queryFn: () => getVegetation({ data: { bbox: [...bbox] as [number, number, number, number] } }) });
   const site = useQuery({ queryKey: ["area-sample", bbox, 5], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getAreaSample({ data: { bbox: [...bbox] as [number, number, number, number], n: 5 } }) });
   const hosp = useQuery({ queryKey: ["osm-h", bbox], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getOsmHospitals({ data: { bbox } }) });
   const roads = useQuery({ queryKey: ["osm-r", bbox], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getOsmRoads({ data: { bbox } }) });
-  const loading = fires.isLoading || grids.some((g) => g.isLoading) || site.isLoading || soilQ.isLoading || hosp.isLoading || roads.isLoading;
+  const loading = fires.isLoading || grids.some((g) => g.isLoading) || site.isLoading || soilQ.isLoading || veg.isLoading || hosp.isLoading || roads.isLoading;
 
   const [text, setText] = useState(""); const [err, setErr] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
@@ -75,6 +77,7 @@ function BriefPage() {
         const c = (m[k] ??= { cellLat: la, cellLon: lo, count: 0, maxFrp: null }); c.count++; if (h.frp !== null && (c.maxFrp === null || h.frp > c.maxFrp)) c.maxFrp = h.frp; return m;
       }, {})).sort((a, b) => b.count - a.count).slice(0, 6),
       soilMoisture: gridStat(soilQ.data),
+      vegetation: veg.data?.status === "ok" && veg.data.summary.valid > 0 ? { source: veg.data.source, compositeStart: veg.data.compositeDate, compositeDays: 16, resolutionM: 250, method: veg.data.method, validPixels: veg.data.summary.valid, excludedPixels: veg.data.summary.invalid, coveragePct: veg.data.summary.coveragePct, qaCounts: veg.data.summary.qaCounts, min: veg.data.summary.min, max: veg.data.summary.max, mean: veg.data.summary.mean, median: veg.data.summary.median } : null,
       spatialSample: s ? {
         method: `Regular ${Math.round(Math.sqrt(s.points.length))}×${Math.round(Math.sqrt(s.points.length))} grid of sample points across the region bounding box (no interpolation)`,
         points: s.points.length,
@@ -92,6 +95,7 @@ function BriefPage() {
         { name: "Population density (sampled grid)", provider: "WorldPop 1 km", status: s?.density.mean != null ? "ok" : "unavailable", latestDate: "2020", latency: "yearly model estimate" },
         { name: "Elevation (sampled grid)", provider: "NASA SRTM 30 m", status: s?.elevation.min != null ? "ok" : "unavailable", latestDate: "2000", latency: "static" },
         { name: "Land cover (sampled grid)", provider: "Esri / Impact Observatory 10 m", status: s && s.points.some((p) => p.landCover) ? "ok" : "unavailable", latestDate: null, latency: "yearly" },
+        { name: "Vegetation NDVI (sampled 250 m pixels)", provider: "NASA MODIS/Terra MOD13Q1.061", status: veg.data?.status === "ok" && veg.data.summary.valid > 0 ? "ok" : "unavailable", latestDate: veg.data?.compositeDate ?? null, latency: "16-day composite, published weeks later" },
         { name: "Soil moisture (root zone)", provider: "NASA POWER", status: soilQ.data?.status ?? "unavailable", latestDate: soilQ.data?.status === "ok" ? soilQ.data.date : null, latency: "published a few days late; not a drought index" },
         { name: "Hospitals & clinics", provider: "OpenStreetMap (Esri replica)", status: hosp.data?.status ?? "unavailable", latestDate: null, latency: "community-updated" },
         { name: "Main roads", provider: "OpenStreetMap (Esri replica)", status: roads.data?.status ?? "unavailable", latestDate: null, latency: "community-updated" },
@@ -151,6 +155,7 @@ function BriefPage() {
             {row("NASA FIRMS hotspots", fires, fires.data?.status === "ok" ? `${fires.data.total.toLocaleString()} detections` : null)}
             {grids.map((g, i) => row(`NASA POWER ${GRID_SCALE[WVARS[i]!].label}`, g, g.data?.status === "ok" ? `${g.data.cells.length} cells · ${g.data.date}` : null))}
             {row("NASA POWER Soil moisture", soilQ, soilQ.data?.status === "ok" ? `${soilQ.data.cells.length} cells · ${soilQ.data.date}` : null)}
+            {row("NASA MODIS NDVI (sampled)", veg, veg.data?.status === "ok" && veg.data.summary.valid > 0 ? `${veg.data.summary.valid}/${veg.data.summary.total} px · ${veg.data.compositeDate}` : null)}
             {row("WorldPop density (sampled)", site, site.data?.density.mean != null ? `${site.data.points.filter((p) => p.densityPerKm2 !== null).length}/${site.data.points.length} points` : null)}
             {row("SRTM elevation (sampled)", site, site.data?.elevation.min != null ? `${site.data.points.filter((p) => p.elevationM !== null).length}/${site.data.points.length} points` : null)}
             {row("Land cover (sampled)", site, site.data?.points.some((p) => p.landCover) ? `${site.data.points.filter((p) => p.landCover).length}/${site.data.points.length} points` : null)}

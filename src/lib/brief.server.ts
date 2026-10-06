@@ -20,6 +20,7 @@ export const BriefInput = z.object({
   weather: z.array(stat).max(8),
   clusters: z.array(z.object({ cellLat: z.number(), cellLon: z.number(), count: z.number(), maxFrp: nn })).max(8),
   soilMoisture: stat,
+  vegetation: z.object({ source: z.string(), compositeStart: z.string().nullable(), compositeDays: z.number(), resolutionM: z.number(), method: z.string(), validPixels: z.number(), excludedPixels: z.number(), coveragePct: nn, qaCounts: z.record(z.string(), z.number()), min: nn, max: nn, mean: nn, median: nn }).nullable(),
   spatialSample: z.object({
     method: z.string(), points: z.number(), pointsWithData: z.object({ landCover: z.number(), elevation: z.number(), density: z.number() }),
     landCoverShare: z.record(z.string(), z.number()),
@@ -47,11 +48,12 @@ const COMMON_RULES = `Rules:
 const INSTRUCTIONS = `You write wildfire response briefs (decision support) for emergency coordinators in Africa (PHOENIX platform).
 ${COMMON_RULES}
 - Population, elevation and land cover come from a regular grid of sample points across the region (spatialSample): describe ranges/shares across those points, never as exact totals; population is estimated density (people/km²), never a count. Slope is not aggregated.
+- NDVI (vegetation) is a MODIS 16-day composite from sampled 250 m pixels: describe it as relatively higher/lower vegetation greenness only; never call it drought, fire risk or proof of anything; give the composite date (weeks old).
 - Do not infer fuel type or fire behaviour from land cover alone; do not call soil moisture a drought index; do not call an area dangerous because one layer is high; never issue evacuation orders.
 Use Markdown with exactly these sections:
   ## 1. Situation summary (3-5 bullets; include the selected time range)
   ## 2. Observed satellite hotspots (count, trend by day, clusters, strongest detections; state they are thermal anomalies, not confirmed ground fires)
-  ## 3. Environmental conditions (weather and soil moisture, ranges across cells, data date and latency)
+  ## 3. Environmental conditions (weather, soil moisture and NDVI vegetation, ranges across cells, data date and latency)
   ## 4. Population exposure & terrain/land (density range, high-density sample points, elevation range, land-cover shares)
   ## 5. Infrastructure & recommended actions (hospitals/roads with caveats; then 5-8 numbered cautious actions: verification first, monitoring, access, coordination with authorities)
   ## 6. Data gaps & sources (missing sources, coverage limits, one line per source with date)
