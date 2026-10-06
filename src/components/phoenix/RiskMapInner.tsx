@@ -4,11 +4,12 @@ import { useEffect } from "react";
 import { COUNTRIES } from "@/data/registry";
 import { riskLevel } from "@/data/types";
 import type { ApiReport, ApiShelter, RiskPoint } from "@/services/api/endpoints";
+import type { Hotspot } from "@/lib/firms.functions";
 
 export type Layers = { risk: boolean; fires: boolean; shelters: boolean; reports: boolean; boundaries: boolean };
 export interface MapProps {
   countryCode?: string | undefined; regionId?: string | undefined; layers?: Layers; riskFilter?: string; height?: number;
-  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined;
+  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined;
 }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
@@ -21,7 +22,7 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMapInner({ countryCode, regionId, layers = { risk: true, fires: true, shelters: true, reports: true, boundaries: true }, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [] }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, layers = { risk: true, fires: true, shelters: true, reports: true, boundaries: true }, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [] }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
@@ -63,9 +64,26 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
             <Popup><b>{na(s.name)}</b><br />Capacity: {na(s.capacity)}<br />Status: {na(s.status)}<br />Contact: {na(s.contact)}</Popup>
           </CircleMarker>
         ))}
-        {layers.reports && reports.map((r) => (
+        {layers.fires && hotspots.map((h, i) => (
+          <CircleMarker key={`h${i}`} center={[h.lat, h.lon]} radius={h.frp && h.frp > 50 ? 7 : 5}
+            pathOptions={{ color: css("--fire"), weight: 1.5, dashArray: "2 2", fillColor: css("--fire"), fillOpacity: 0.35 }}>
+            <Popup>
+              <b>Satellite hotspot</b> <i>(thermal anomaly)</i><br />
+              <b style={{ color: css("--fire") }}>Not a confirmed ground fire</b><br />
+              Source: NASA FIRMS · {h.instrument}{h.satellite ? ` · ${h.satellite}` : ""}<br />
+              {h.acqDate} {h.acqTime} UTC{h.daynight ? ` (${h.daynight === "D" ? "day" : "night"})` : ""}<br />
+              Confidence: {na(h.confidence)} · FRP: {h.frp !== null ? `${h.frp} MW` : "Data unavailable"}<br />
+              {h.lat.toFixed(4)}, {h.lon.toFixed(4)}
+            </Popup>
+          </CircleMarker>
+        ))}
+        {layers.reports && reports.map((r) => r.confirmed ? (
+          <Rectangle key={r.id} bounds={[[r.lat - 0.03, r.lon - 0.03], [r.lat + 0.03, r.lon + 0.03]]} pathOptions={{ color: css("--foreground"), weight: 2, fillColor: css("--destructive"), fillOpacity: 0.95 }}>
+            <Popup><b>Confirmed ground fire</b><br />Verified report<br />{na(r.description)}<br />{na(r.reportedAt)}</Popup>
+          </Rectangle>
+        ) : (
           <CircleMarker key={r.id} center={[r.lat, r.lon]} radius={5} pathOptions={{ color: css("--report"), fillColor: css("--report"), fillOpacity: 0.8 }}>
-            <Popup><b>Community fire report</b><br />{na(r.description)}<br />{na(r.reportedAt)}</Popup>
+            <Popup><b>Community fire report</b> (unverified)<br />{na(r.description)}<br />{na(r.reportedAt)}</Popup>
           </CircleMarker>
         ))}
       </MapContainer>

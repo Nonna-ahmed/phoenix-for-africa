@@ -5,7 +5,7 @@ import type { Environment } from "@/data/types";
 export interface RiskPoint { lat: number; lon: number; probability: number | null; level: string | null; date: string | null; environment: Environment | null }
 export interface ApiShelter { id: string; name: string | null; lat: number; lon: number; capacity: number | null; status: string | null; contact: string | null; region: string | null }
 export interface ApiAlert { id: string; kind: "risk" | "detection"; title: string; message: string | null; region: string | null; country: string | null; probability: number | null; issuedAt: string | null }
-export interface ApiReport { id: string; lat: number; lon: number; description: string | null; reportedAt: string | null }
+export interface ApiReport { id: string; lat: number; lon: number; description: string | null; reportedAt: string | null; confirmed: boolean }
 export interface FwiValue { value: number | null; date: string | null; raw: Record<string, unknown> }
 
 export interface AreaQuery { country?: string | undefined; region?: string | undefined; bbox?: [number, number, number, number] | undefined }
@@ -69,7 +69,9 @@ export async function getFireReports(a: Partial<AreaQuery>, signal?: AbortSignal
   return rows(data, ["reports"]).map((r, i) => {
     const lat = num(r, LAT), lon = num(r, LON);
     if (lat === null || lon === null) return null;
-    return { id: str(r, ["id"]) ?? `r${i}`, lat, lon, description: str(r, ["description", "message"]), reportedAt: str(r, ["reported_at", "created_at", "datetime", "date"]) };
+    return { id: str(r, ["id"]) ?? `r${i}`, lat, lon, description: str(r, ["description", "message"]), reportedAt: str(r, ["reported_at", "created_at", "datetime", "date"]),
+      // Only an explicit backend verification marks a ground fire as confirmed.
+      confirmed: /^(confirmed|verified|true)$/i.test(str(r, ["status", "verification_status", "verified", "confirmed"]) ?? "") };
   }).filter(hasCoords);
 }
 
