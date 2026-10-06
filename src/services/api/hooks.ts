@@ -1,3 +1,4 @@
+import { getSafeLocations } from "@/lib/locations.functions";
 import { getPowerDaily } from "@/lib/power.functions";
 import { getFirmsHotspots } from "@/lib/firms.functions";
 import { useQuery } from "@tanstack/react-query";
@@ -48,4 +49,9 @@ export function useHotspots(bbox: [number, number, number, number] | undefined, 
 /** NASA POWER daily weather for a point (server fn, no key needed). */
 export function usePower(point: [number, number] | undefined, days = 14) {
   return useQuery({ ...opts, staleTime: 3 * 3600_000, queryKey: ["power", point, days], enabled: !!point, queryFn: () => getPowerDaily({ data: { lat: point![0], lon: point![1], days } }) });
+}
+
+/** Shelters & safe locations from the source registry (GRID3 etc.), per country + area. */
+export function useSafeLocations(countryCode: string | undefined, bbox: [number, number, number, number] | undefined, enabled = true) {
+  return useQuery({ ...opts, staleTime: 6 * 3600_000, queryKey: ["safe-locations", countryCode, bbox], enabled: enabled && !!countryCode && !!bbox, queryFn: () => getSafeLocations({ data: { countryCode: countryCode!, bbox: bbox! } }) });
 }
