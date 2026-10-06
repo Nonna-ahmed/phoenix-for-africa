@@ -6,7 +6,8 @@ import remarkGfm from "remark-gfm";
 import { COUNTRIES, scopeBbox } from "@/data/registry";
 import { PageHeader, Section } from "@/components/phoenix/ui";
 import { Note } from "@/components/phoenix/ApiState";
-import { useHotspots, useSiteContext } from "@/services/api/hooks";
+import { useHotspots } from "@/services/api/hooks";
+import { getAreaSample } from "@/lib/site.functions";
 import { getPowerGrid, type GridParam, type GridResult } from "@/lib/grid.functions";
 import { getOsmHospitals, getOsmRoads } from "@/lib/osm.functions";
 import { GRID_SCALE } from "@/data/rasters";
@@ -47,10 +48,11 @@ function BriefPage() {
 
   const fires = useHotspots(bbox, days);
   const grids = WVARS.map((p) => useQuery({ queryKey: ["grid", bbox, p], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: p } }) }));
-  const site = useSiteContext(r?.center);
+  const soilQ = useQuery({ queryKey: ["grid", bbox, "GWETROOT"], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: "GWETROOT" } }) });
+  const site = useQuery({ queryKey: ["area-sample", bbox, 5], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getAreaSample({ data: { bbox: [...bbox] as [number, number, number, number], n: 5 } }) });
   const hosp = useQuery({ queryKey: ["osm-h", bbox], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getOsmHospitals({ data: { bbox } }) });
   const roads = useQuery({ queryKey: ["osm-r", bbox], staleTime: 6 * 3600_000, retry: 1, queryFn: () => getOsmRoads({ data: { bbox } }) });
-  const loading = fires.isLoading || grids.some((g) => g.isLoading) || site.isLoading || hosp.isLoading || roads.isLoading;
+  const loading = fires.isLoading || grids.some((g) => g.isLoading) || site.isLoading || soilQ.isLoading || hosp.isLoading || roads.isLoading;
 
   const [text, setText] = useState(""); const [err, setErr] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
@@ -59,8 +61,7 @@ function BriefPage() {
     const f = fires.data; const hs = f?.status === "ok" ? f.hotspots : [];
     const count = (k: (h: (typeof hs)[number]) => string) => hs.reduce<Record<string, number>>((m, h) => ((m[k(h)] = (m[k(h)] ?? 0) + 1), m), {});
     const s = site.data;
-    const ok = <T,>(x: { status: string } | undefined, v: T): T | null => (x?.status === "ok" ? v : null);
-    return {
+        return {
       area: { country: c?.name ?? country, region: r?.name ?? null, bbox: [...bbox] },
       timeRange: { days, label: RANGES.find(([d]) => d === days)?.[1] ?? `${days} days` },
       hotspots: {
@@ -69,21 +70,29 @@ function BriefPage() {
         strongest: [...hs].sort((a, b) => (b.frp ?? 0) - (a.frp ?? 0)).slice(0, 12).map((h) => ({ lat: h.lat, lon: h.lon, frp: h.frp, date: `${h.acqDate} ${h.acqTime}`, confidence: h.confidence, instrument: h.instrument })),
       },
       weather: grids.map((g) => gridStat(g.data)),
-      site: s ? {
-        point: r ? [r.center[0], r.center[1]] : [0, 0],
-        landCover: ok(s.landCover, s.landCover.landCoverLabel), elevationM: ok(s.terrain, s.terrain.elevation), slopeDeg: ok(s.terrain, s.terrain.slope),
-        population: ok(s.population, s.population.population), populationAreaKm2: ok(s.population, s.population.areaKm2), populationDensity: ok(s.population, s.population.populationDensity),
-        soilMoistureRoot: ok(s.drought, s.drought.soilMoistureRoot), soilMoistureDate: ok(s.drought, s.drought.date),
+      clusters: Object.values(hs.reduce<Record<string, { cellLat: number; cellLon: number; count: number; maxFrp: number | null }>>((m, h) => {
+        const la = Math.floor(h.lat * 4) / 4 + 0.125, lo = Math.floor(h.lon * 4) / 4 + 0.125, k = `${la},${lo}`;
+        const c = (m[k] ??= { cellLat: la, cellLon: lo, count: 0, maxFrp: null }); c.count++; if (h.frp !== null && (c.maxFrp === null || h.frp > c.maxFrp)) c.maxFrp = h.frp; return m;
+      }, {})).sort((a, b) => b.count - a.count).slice(0, 6),
+      soilMoisture: gridStat(soilQ.data),
+      spatialSample: s ? {
+        method: `Regular ${Math.round(Math.sqrt(s.points.length))}×${Math.round(Math.sqrt(s.points.length))} grid of sample points across the region bounding box (no interpolation)`,
+        points: s.points.length,
+        pointsWithData: { landCover: s.points.filter((p) => p.landCover).length, elevation: s.points.filter((p) => p.elevationM !== null).length, density: s.points.filter((p) => p.densityPerKm2 !== null).length },
+        landCoverShare: Object.fromEntries(Object.entries(s.landCoverCounts).map(([k, v]) => [k, Math.round((v / s.points.length) * 100)])),
+        elevationM: s.elevation, densityPerKm2: s.density,
+        highDensityPoints: s.points.filter((p): p is typeof p & { densityPerKm2: number } => p.densityPerKm2 !== null).sort((a, b) => b.densityPerKm2 - a.densityPerKm2).slice(0, 5).map((p) => ({ lat: p.lat, lon: p.lon, densityPerKm2: p.densityPerKm2 })),
+        slope: "Data unavailable (slope is not aggregated across the region)", retrievedAt: s.retrievedAt,
       } : null,
       infrastructure: { hospitals: hosp.data?.status === "ok" ? hosp.data.total : null, roadSegments: roads.data?.status === "ok" ? roads.data.total : null },
       aiRisk: "PHOENIX AI risk prediction not available (backend not connected).",
       sources: [
         { name: "Satellite fire detections", provider: "NASA FIRMS", status: f?.status ?? "unavailable", latestDate: hs.length ? hs.map((h) => h.acqDate).sort().at(-1)! : null, latency: "near real-time (~3 h)" },
         ...grids.map((g, i) => ({ name: `Weather: ${GRID_SCALE[WVARS[i]!].label}`, provider: "NASA POWER", status: g.data?.status ?? "unavailable", latestDate: g.data?.status === "ok" ? g.data.date : null, latency: "published a few days late; not real-time" })),
-        { name: "Population density", provider: "WorldPop", status: s?.population.status ?? "unavailable", latestDate: "2020", latency: "yearly model estimate" },
-        { name: "Terrain", provider: "NASA SRTM 30 m", status: s?.terrain.status ?? "unavailable", latestDate: "2000", latency: "static" },
-        { name: "Land cover", provider: "Esri / Impact Observatory", status: s?.landCover.status ?? "unavailable", latestDate: null, latency: "yearly" },
-        { name: "Soil moisture", provider: "NASA POWER", status: s?.drought.status ?? "unavailable", latestDate: s && s.drought.status === "ok" ? s.drought.date : null, latency: "published a few days late" },
+        { name: "Population density (sampled grid)", provider: "WorldPop 1 km", status: s?.density.mean != null ? "ok" : "unavailable", latestDate: "2020", latency: "yearly model estimate" },
+        { name: "Elevation (sampled grid)", provider: "NASA SRTM 30 m", status: s?.elevation.min != null ? "ok" : "unavailable", latestDate: "2000", latency: "static" },
+        { name: "Land cover (sampled grid)", provider: "Esri / Impact Observatory 10 m", status: s && s.points.some((p) => p.landCover) ? "ok" : "unavailable", latestDate: null, latency: "yearly" },
+        { name: "Soil moisture (root zone)", provider: "NASA POWER", status: soilQ.data?.status ?? "unavailable", latestDate: soilQ.data?.status === "ok" ? soilQ.data.date : null, latency: "published a few days late; not a drought index" },
         { name: "Hospitals & clinics", provider: "OpenStreetMap (Esri replica)", status: hosp.data?.status ?? "unavailable", latestDate: null, latency: "community-updated" },
         { name: "Main roads", provider: "OpenStreetMap (Esri replica)", status: roads.data?.status ?? "unavailable", latestDate: null, latency: "community-updated" },
         { name: "Verified emergency shelters", provider: "Official/humanitarian", status: "unavailable", latestDate: null, latency: "no source connected" },
@@ -141,7 +150,10 @@ function BriefPage() {
           <ul className="space-y-1.5 text-sm">
             {row("NASA FIRMS hotspots", fires, fires.data?.status === "ok" ? `${fires.data.total.toLocaleString()} detections` : null)}
             {grids.map((g, i) => row(`NASA POWER ${GRID_SCALE[WVARS[i]!].label}`, g, g.data?.status === "ok" ? `${g.data.cells.length} cells · ${g.data.date}` : null))}
-            {row("Population, terrain, land cover", site, site.data ? "Region reference point" : null)}
+            {row("NASA POWER Soil moisture", soilQ, soilQ.data?.status === "ok" ? `${soilQ.data.cells.length} cells · ${soilQ.data.date}` : null)}
+            {row("WorldPop density (sampled)", site, site.data?.density.mean != null ? `${site.data.points.filter((p) => p.densityPerKm2 !== null).length}/${site.data.points.length} points` : null)}
+            {row("SRTM elevation (sampled)", site, site.data?.elevation.min != null ? `${site.data.points.filter((p) => p.elevationM !== null).length}/${site.data.points.length} points` : null)}
+            {row("Land cover (sampled)", site, site.data?.points.some((p) => p.landCover) ? `${site.data.points.filter((p) => p.landCover).length}/${site.data.points.length} points` : null)}
             {row("OSM hospitals & clinics", hosp, hosp.data?.status === "ok" ? hosp.data.total.toLocaleString() : null)}
             {row("OSM main roads", roads, roads.data?.status === "ok" ? `${roads.data.total.toLocaleString()} segments` : null)}
             <li className="flex justify-between gap-3"><span>PHOENIX AI risk</span><span className="text-unavailable">Backend not connected</span></li>
