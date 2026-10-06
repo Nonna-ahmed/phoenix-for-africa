@@ -258,7 +258,7 @@ def stage_build(wid):
         C = C.sort_values(["grid_id", "composite_start"])
         C["ndvi_previous"] = C.groupby("grid_id").ndvi.shift(1); C["ndvi_change"] = C.ndvi - C.ndvi_previous
         C.to_parquet(f"{OUT}/ndvi_composites_{wid}.parquet", index=False)
-        C = C.dropna(subset=["data_available_date"]).sort_values("data_available_date")
+        C = C.dropna(subset=["data_available_date"]).sort_values("data_available_date"); C["data_available_date"] = C.data_available_date.astype("datetime64[ns]"); T["date"] = T.date.astype("datetime64[ns]")
         T = T.sort_values("date")
         T = pd.merge_asof(T, C[["grid_id", "data_available_date", "composite_start", "ndvi", "ndvi_previous", "ndvi_change", "ndvi_valid_px"]].rename(columns={"ndvi": "ndvi_current", "composite_start": "ndvi_composite_start", "data_available_date": "ndvi_available_date"}),
                           left_on="date", right_on="ndvi_available_date", by="grid_id", direction="backward")
