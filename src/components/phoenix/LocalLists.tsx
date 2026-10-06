@@ -1,5 +1,5 @@
-import type { Environment } from "@/data/types";
-import { useAlerts, useFireReports, useFwi, useHotspots, useShelters } from "@/services/api/hooks";
+import type { PowerParam } from "@/lib/power.functions";
+import { usePower, useAlerts, useFireReports, useFwi, useHotspots, useShelters } from "@/services/api/hooks";
 import { scopeBbox } from "@/data/registry";
 import { ApiState, LiveBadge, Note } from "./ApiState";
 import { AlertCard, Section } from "./ui";
@@ -83,18 +83,23 @@ export function FwiPanel({ countryCode, regionId, bbox }: Scope) {
   );
 }
 
-export function EnvPanel({ env, date }: { env?: Environment | null | undefined; date?: string | null | undefined }) {
-  if (!env) return <Section title="Environmental conditions"><Note tone="muted">Environmental data unavailable</Note></Section>;
-  const f = (v: number | null, u: string) => (v === null ? <span className="text-unavailable">Missing</span> : `${v}${u}`);
-  const rows: [string, string, React.ReactNode][] = [
-    ["T2M_MAX", "Max temp", f(env.t2mMax, "°C")], ["T2M_MIN", "Min temp", f(env.t2mMin, "°C")], ["RH2M", "Humidity", f(env.rh2m, "%")],
-    ["WS2M", "Wind", f(env.ws2m, " m/s")], ["PRECTOTCORR", "Precipitation", f(env.precip, " mm")],
-  ];
+export function EnvPanel({ point }: { point?: [number, number] | undefined }) {
+  const q = usePower(point);
+  const d = q.data;
+  const f = (v: number | null | undefined, u: string) => (v === null || v === undefined ? <span className="text-unavailable">Missing</span> : `${v}${u}`);
+  const rows: [PowerParam, string, string][] = [["T2M_MAX", "Max temp", "°C"], ["T2M_MIN", "Min temp", "°C"], ["T2M", "Mean temp", "°C"], ["RH2M", "Humidity", "%"], ["WS2M", "Wind", " m/s"], ["PRECTOTCORR", "Precipitation", " mm"], ["ALLSKY_SFC_SW_DWN", "Solar radiation", " kWh/m²"]];
   return (
-    <Section title="Environmental conditions" right={<LiveBadge />}>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">{rows.map(([k, l, v]) => (
-        <div key={k} className="rounded-sm bg-background/40 p-2"><div className="label-mono">{k}</div><div className="text-xs text-muted-foreground">{l}</div><div className="font-display text-xl">{v}</div></div>))}</div>
-      <p className="label-mono mt-2">NASA POWER · {date || env.date || "date unavailable"} · -999 values shown as Missing</p>
+    <Section title="Environmental conditions" right={d?.status === "ok" ? <LiveBadge /> : undefined}>
+      {!point ? <Note tone="muted">Environmental data unavailable</Note>
+        : q.isLoading ? <p className="text-sm text-muted-foreground">Loading NASA POWER data…</p>
+        : q.isError || d?.status === "error" ? <Note tone="error">{d?.message ?? "Unable to retrieve current data. Please try again."}</Note>
+        : !d?.latest ? <Note tone="muted">No data available for the selected area.</Note>
+        : (<>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">{rows.map(([k, l, u]) => (
+            <div key={k} className="rounded-sm bg-background/40 p-2"><div className="label-mono">{k}</div><div className="text-xs text-muted-foreground">{l}</div><div className="font-display text-xl">{f(d.latest!.values[k], u)}</div></div>))}</div>
+          <p className="label-mono mt-2">Source: NASA POWER · {d.dataset} · day {d.latest.date} · point {d.lat}, {d.lon} · retrieved {d.retrievedAt.slice(0, 16).replace("T", " ")} UTC</p>
+          <p className="mt-1 text-xs text-muted-foreground">NASA POWER publishes with a few days' delay; more recent days are missing (-999) and shown as Missing. Weather inputs only — this is not a risk prediction.</p>
+        </>)}
     </Section>
   );
 }

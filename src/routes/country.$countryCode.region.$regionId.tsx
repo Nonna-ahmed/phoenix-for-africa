@@ -51,7 +51,7 @@ function RegionPage() {
         </Section>
         <div className="lg:col-span-2"><Section title="Region map"><RiskMap countryCode={c.code} regionId={r.id} height={360} /><MapLegend /></Section></div>
       </div>
-      <EnvPanel env={s.environment} date={s.latestDate} />
+      <EnvPanel point={r.center} />
       <div className="grid gap-6 md:grid-cols-2">
         <FwiPanel countryCode={c.code} regionId={r.id} bbox={r.bbox} /><DetectionList countryCode={c.code} regionId={r.id} />
         <AlertList countryCode={c.code} regionId={r.id} /><ShelterList countryCode={c.code} regionId={r.id} />
