@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as AssistanceRouteImport } from './routes/assistance'
 import { Route as CountriesRouteImport } from './routes/countries'
+import { Route as DataSourcesRouteImport } from './routes/data-sources'
 import { Route as FiresRouteImport } from './routes/fires'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as ModelsRouteImport } from './routes/models'
@@ -45,6 +46,11 @@ const AssistanceRoute = AssistanceRouteImport.update({
 const CountriesRoute = CountriesRouteImport.update({
   id: '/countries',
   path: '/countries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataSourcesRoute = DataSourcesRouteImport.update({
+  id: '/data-sources',
+  path: '/data-sources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FiresRoute = FiresRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/alerts': typeof AlertsRoute
   '/assistance': typeof AssistanceRoute
   '/countries': typeof CountriesRoute
+  '/data-sources': typeof DataSourcesRoute
   '/fires': typeof FiresRoute
   '/map': typeof MapRoute
   '/models': typeof ModelsRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/alerts': typeof AlertsRoute
   '/assistance': typeof AssistanceRoute
   '/countries': typeof CountriesRoute
+  '/data-sources': typeof DataSourcesRoute
   '/fires': typeof FiresRoute
   '/map': typeof MapRoute
   '/models': typeof ModelsRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/alerts': typeof AlertsRoute
   '/assistance': typeof AssistanceRoute
   '/countries': typeof CountriesRoute
+  '/data-sources': typeof DataSourcesRoute
   '/fires': typeof FiresRoute
   '/map': typeof MapRoute
   '/models': typeof ModelsRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/assistance'
     | '/countries'
+    | '/data-sources'
     | '/fires'
     | '/map'
     | '/models'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/assistance'
     | '/countries'
+    | '/data-sources'
     | '/fires'
     | '/map'
     | '/models'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/assistance'
     | '/countries'
+    | '/data-sources'
     | '/fires'
     | '/map'
     | '/models'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   AlertsRoute: typeof AlertsRoute
   AssistanceRoute: typeof AssistanceRoute
   CountriesRoute: typeof CountriesRoute
+  DataSourcesRoute: typeof DataSourcesRoute
   FiresRoute: typeof FiresRoute
   MapRoute: typeof MapRoute
   ModelsRoute: typeof ModelsRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/countries'
       fullPath: '/countries'
       preLoaderRoute: typeof CountriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-sources': {
+      id: '/data-sources'
+      path: '/data-sources'
+      fullPath: '/data-sources'
+      preLoaderRoute: typeof DataSourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fires': {
@@ -292,6 +312,7 @@ const rootRouteChildren: RootRouteChildren = {
   AlertsRoute: AlertsRoute,
   AssistanceRoute: AssistanceRoute,
   CountriesRoute: CountriesRoute,
+  DataSourcesRoute: DataSourcesRoute,
   FiresRoute: FiresRoute,
   MapRoute: MapRoute,
   ModelsRoute: ModelsRoute,
