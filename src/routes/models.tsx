@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { COUNTRIES, MODELS } from "@/data/registry";
+import { defaultAvailability, getAvailability } from "@/data/sources";
 import { DataStatusGrid, PageHeader, Section } from "@/components/phoenix/ui";
 
 export const Route = createFileRoute("/models")({
@@ -30,6 +31,21 @@ function Models() {
             {m.notes && <p className="mt-2 text-sm text-muted-foreground">{m.notes}</p>}
             <p className="label-mono mt-2">Test / evaluation metrics — not live prediction confidence</p>
           </div>))}</div>
+      </Section>
+      <Section title="Data sources by country">
+        <p className="mb-3 text-sm text-muted-foreground">Four separate concepts: NASA FIRMS satellite hotspots, PHOENIX AI risk predictions, confirmed wildfires (verified ground reports) and emergency shelters. Only sources actually found and retrieved are listed.</p>
+        <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead><tr className="label-mono text-left">{["Country", "Environment", "Fire detection", "Risk model", "Emergency shelters", "Settlements / facilities"].map((h) => <th key={h} className="py-2 pr-3 font-normal">{h}</th>)}</tr></thead>
+          <tbody>{COUNTRIES.map((c) => { const a = getAvailability(c.code) ?? defaultAvailability(c.code); return (
+            <tr key={c.code} className="border-t align-top">
+              <td className="py-2 pr-3 font-medium">{c.name}</td>
+              <td className="pr-3">{a.environmentSource}</td>
+              <td className="pr-3">{a.fireDetectionSource}</td>
+              <td className="pr-3">{a.riskModelSource ?? <span className="text-unavailable">Not available</span>}</td>
+              <td className="pr-3">{a.shelterSource ?? <span className="text-unavailable">No verified shelter data</span>}</td>
+              <td className="pr-3">{a.layers.length ? <ul>{a.layers.map((l) => <li key={l.id}><a href={l.url} target="_blank" rel="noreferrer" className="hover:text-primary">{l.sourceDataset}</a>{l.coverageNote ? <span className="text-xs text-muted-foreground"> — {l.coverageNote}</span> : null}</li>)}</ul> : <span className="text-unavailable">{a.settlementSource ?? "Not available"}</span>}</td>
+            </tr>); })}</tbody>
+        </table></div>
       </Section>
       <Section title="Data availability by country">
         <div className="divide-y">{COUNTRIES.map((c) => (

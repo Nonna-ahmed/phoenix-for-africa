@@ -5,11 +5,12 @@ import { COUNTRIES } from "@/data/registry";
 import { riskLevel } from "@/data/types";
 import type { ApiReport, ApiShelter, RiskPoint } from "@/services/api/endpoints";
 import type { Hotspot } from "@/lib/firms.functions";
+import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type SafeLocation } from "@/data/locations";
 
 export type Layers = { risk: boolean; fires: boolean; shelters: boolean; reports: boolean; boundaries: boolean };
 export interface MapProps {
   countryCode?: string | undefined; regionId?: string | undefined; layers?: Layers; riskFilter?: string; height?: number;
-  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined;
+  risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined;
 }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
@@ -22,7 +23,7 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMapInner({ countryCode, regionId, layers = { risk: true, fires: true, shelters: true, reports: true, boundaries: true }, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [] }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, layers = { risk: true, fires: true, shelters: true, reports: true, boundaries: true }, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [] }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
@@ -59,9 +60,27 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
             </CircleMarker>
           );
         })}
+        {layers.shelters && locations.map((l) => {
+          const confirmed = isConfirmedShelter(l);
+          const c = confirmed ? css("--shelter") : css(l.locationType === "health_facility" ? "--loc-health" : l.locationType === "school" ? "--loc-school" : l.locationType === "religious_center" ? "--loc-religious" : "--loc-settlement");
+          const r = confirmed ? 8 : l.locationType === "settlement" ? 2.5 : 4;
+          return (
+            <CircleMarker key={l.id} center={[l.latitude, l.longitude]} radius={r} pathOptions={{ color: confirmed ? css("--foreground") : c, weight: confirmed ? 3 : 1, fillColor: c, fillOpacity: 0.85 }}>
+              <Popup>
+                <b>{l.name ?? "Name unavailable"}</b><br />
+                Type: {TYPE_LABEL[l.locationType]}{confirmed ? " (confirmed emergency shelter)" : " — not an emergency shelter"}<br />
+                {l.country}{l.region ? ` · ${l.region}` : ""}{l.district ? ` · ${l.district}` : ""}<br />
+                Source: {l.sourceDataset}<br />
+                Verification: {VERIFY_LABEL[l.verificationStatus]}<br />
+                Capacity: {na(l.capacity)} · Last verified: {na(l.lastVerified)}<br />
+                {l.latitude.toFixed(4)}, {l.longitude.toFixed(4)}{l.notes ? <><br />{l.notes}</> : null}
+              </Popup>
+            </CircleMarker>
+          );
+        })}
         {layers.shelters && shelters.map((s) => (
           <CircleMarker key={s.id} center={[s.lat, s.lon]} radius={6} pathOptions={{ color: css("--shelter"), fillColor: css("--shelter"), fillOpacity: 0.8 }}>
-            <Popup><b>{na(s.name)}</b><br />Capacity: {na(s.capacity)}<br />Status: {na(s.status)}<br />Contact: {na(s.contact)}</Popup>
+            <Popup><b>{na(s.name)}</b><br />PHOENIX shelter file (drc_katanga_shelters_final.csv)<br />Verification: Unverified — provenance not provided<br />Capacity: {na(s.capacity)}<br />Status: {na(s.status)}<br />Contact: {na(s.contact)}</Popup>
           </CircleMarker>
         ))}
         {layers.fires && hotspots.map((h, i) => (

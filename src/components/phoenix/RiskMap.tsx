@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import type { MapProps } from "./RiskMapInner";
 import { getCountry } from "@/data/registry";
-import { useFireReports, useHotspots, useRiskMap, useShelters } from "@/services/api/hooks";
+import { useSafeLocations, useFireReports, useHotspots, useRiskMap, useShelters } from "@/services/api/hooks";
 import { scopeBbox } from "@/data/registry";
 import { apiBaseUrl } from "@/services/api/client";
 
@@ -15,6 +15,7 @@ function Map(props: MapProps) {
 
 /** Map wired to the backend for one connected country/region (or all connected). */
 export function RiskMap(props: Omit<MapProps, "risk" | "shelters" | "reports" | "hotspots"> & { days?: number }) {
+  const locs = useSafeLocations(props.countryCode, props.countryCode ? scopeBbox(props.countryCode, props.regionId) : undefined, props.layers?.shelters ?? true);
   const fires = useHotspots(scopeBbox(props.countryCode, props.regionId), props.days ?? 1, props.layers?.fires ?? true);
   const dz = useArea("DZ", props), cd = useArea("CD", props);
   const all = [dz, cd];
@@ -25,8 +26,9 @@ export function RiskMap(props: Omit<MapProps, "risk" | "shelters" | "reports" | 
   const failed = all.filter((a) => a.enabled && (a.risk.isError || a.shelters.isError || a.reports.isError)).length;
   return (
     <div>
-      <Map {...props} risk={risk} shelters={shelters} reports={reports} hotspots={fires.data?.hotspots} />
+      <Map {...props} risk={risk} shelters={shelters} reports={reports} hotspots={fires.data?.hotspots} locations={locs.data?.locations} />
       <MapStatus configured={!!apiBaseUrl()} loading={loading} failed={failed} noRisk={!loading && risk.length === 0} fire={fireMsg(fires, props.layers?.fires ?? true)} />
+      {(props.layers?.shelters ?? true) && <p className="text-xs text-muted-foreground">{!props.countryCode ? "Select a country to load shelters & safe locations." : locs.isLoading ? "Loading safe-location data…" : locs.data?.noSource ? "No verified shelter data available for this country." : locs.data ? `GRID3 locations: ${locs.data.locations.length.toLocaleString()} shown (${locs.data.layers.map((l) => `${l.sourceDataset}: ${l.status === "ok" ? l.count.toLocaleString() : "unavailable"}`).join("; ")}). These are not emergency shelters.` : ""}</p>}
     </div>
   );
 }
@@ -71,7 +73,7 @@ function MapStatus({ configured, loading, failed, noRisk, fire }: { configured: 
 }
 
 export function MapLegend() {
-  const items: [string, string][] = [["bg-risk-high", "High risk ≥65%"], ["bg-risk-medium", "Medium 35–65%"], ["bg-risk-low", "Low <35%"], ["bg-shelter", "Shelter"], ["bg-report", "Community report (unverified)"]];
+  const items: [string, string][] = [["bg-risk-high", "High risk ≥65%"], ["bg-risk-medium", "Medium 35–65%"], ["bg-risk-low", "Low <35%"], ["bg-shelter", "Confirmed emergency shelter"], ["bg-loc-health", "Health facility"], ["bg-loc-school", "School"], ["bg-loc-religious", "Religious center"], ["bg-loc-settlement", "Settlement"], ["bg-report", "Community report (unverified)"]];
   return (
     <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
       {items.map(([c, l]) => <span key={l} className="flex items-center gap-1.5"><span className={`h-2.5 w-2.5 rounded-full ${c}`} />{l}</span>)}

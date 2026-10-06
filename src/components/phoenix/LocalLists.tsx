@@ -1,6 +1,8 @@
-import type { Environment } from "@/data/types";
-import { useAlerts, useFireReports, useFwi, useHotspots, useShelters } from "@/services/api/hooks";
+import type { PowerParam } from "@/lib/power.functions";
+import { useSafeLocations, usePower, useAlerts, useFireReports, useFwi, useHotspots, useShelters } from "@/services/api/hooks";
 import { scopeBbox } from "@/data/registry";
+import { getAvailability } from "@/data/sources";
+import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type LocationType, type SafeLocation } from "@/data/locations";
 import { ApiState, LiveBadge, Note } from "./ApiState";
 import { AlertCard, Section } from "./ui";
 
@@ -31,20 +33,57 @@ export function DetectionList({ countryCode, regionId }: Scope) {
   );
 }
 
-export function ShelterList({ countryCode, regionId }: Scope) {
-  if (countryCode && countryCode !== "CD") return <Section title="Shelters & safe locations"><Note tone="muted">Shelter data not currently available for this region.</Note></Section>;
-  const q = useShelters({ country: "CD", region: regionId });
+export function ShelterList({ countryCode = "CD", regionId }: Scope) {
+  const avail = getAvailability(countryCode);
+  const locs = useSafeLocations(countryCode, scopeBbox(countryCode, regionId));
+  const backend = useShelters(countryCode === "CD" ? { country: "CD", region: regionId } : null);
+  const all = locs.data?.locations ?? [];
+  const confirmed = all.filter(isConfirmedShelter);
+  const others = all.filter((l) => !isConfirmedShelter(l));
+  const byType = others.reduce<Record<string, number>>((m, l) => ((m[l.locationType] = (m[l.locationType] ?? 0) + 1), m), {});
   return (
-    <Section title="Shelters & safe locations" right={<LiveBadge />}>
-      <ApiState q={q}>{(list) => (
-        <ul className="max-h-96 space-y-2 overflow-y-auto">{list.map((x) => (
-          <li key={x.id} className="rounded-sm border-l-4 border-l-shelter bg-background/40 p-2 text-sm">
-            <div className="font-medium">{na(x.name)}</div>
-            <div className="text-muted-foreground">Capacity: {na(x.capacity)} · Status: {na(x.status)} · Contact: {na(x.contact)}</div>
-            <div className="label-mono">{x.lat.toFixed(3)}, {x.lon.toFixed(3)}{x.region ? ` · ${x.region}` : ""}</div>
-          </li>))}</ul>)}
-      </ApiState>
-    </Section>
+    <div className="space-y-4">
+      <Section title="Emergency shelters (confirmed)">
+        {confirmed.length ? <LocList list={confirmed} /> : <Note tone="muted">No verified shelter data available{avail?.notes ? ` — ${avail.notes}` : "."}</Note>}
+        <p className="label-mono mt-2">Only official or humanitarian-verified sources count as confirmed shelters</p>
+      </Section>
+      <Section title="Potential safe locations & infrastructure" right={locs.data && !locs.data.noSource ? <LiveBadge /> : undefined}>
+        <p className="mb-2 rounded-sm bg-muted p-2 text-xs text-muted-foreground">These come from GRID3, a trusted mapping source for settlements and facilities. They are <b>not</b> designated emergency shelters — check with local authorities before going to one.</p>
+        {locs.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p>
+          : locs.isError ? <Note tone="error">Unable to retrieve current data. Please try again.</Note>
+          : locs.data?.noSource ? <Note tone="muted">Shelter data unavailable for this country.</Note>
+          : (<>
+            <div className="mb-2 flex flex-wrap gap-2">{Object.entries(byType).map(([t, n]) => <span key={t} className="label-mono rounded-sm border px-2 py-1">{TYPE_LABEL[t as LocationType]}: {n}</span>)}</div>
+            {locs.data?.layers.map((l) => <p key={l.layerId} className="text-xs text-muted-foreground">{l.sourceDataset}: {l.status === "ok" ? `${l.count.toLocaleString()} in area, ${l.returned} loaded` : "unavailable"}{l.coverageNote ? ` · ${l.coverageNote}` : ""}</p>)}
+            <div className="mt-2"><LocList list={others.filter((l) => l.locationType !== "settlement").slice(0, 60)} /></div>
+          </>)}
+      </Section>
+      {countryCode === "CD" && (
+        <Section title="PHOENIX shelter file (backend)" right={<LiveBadge />}>
+          <p className="mb-2 text-xs text-muted-foreground">drc_katanga_shelters_final.csv — verification status not provided, shown as unverified.</p>
+          <ApiState q={backend}>{(list) => (
+            <ul className="max-h-72 space-y-2 overflow-y-auto">{list.map((x) => (
+              <li key={x.id} className="rounded-sm border-l-4 border-l-shelter bg-background/40 p-2 text-sm">
+                <div className="font-medium">{na(x.name)}</div>
+                <div className="text-muted-foreground">Capacity: {na(x.capacity)} · Status: {na(x.status)} · Unverified</div>
+                <div className="label-mono">{x.lat.toFixed(3)}, {x.lon.toFixed(3)}</div>
+              </li>))}</ul>)}
+          </ApiState>
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function LocList({ list }: { list: SafeLocation[] }) {
+  if (!list.length) return <Note tone="muted">No data available for the selected area.</Note>;
+  return (
+    <ul className="max-h-96 space-y-2 overflow-y-auto">{list.map((l) => (
+      <li key={l.id} className="rounded-sm border-l-4 border-l-loc-health bg-background/40 p-2 text-sm">
+        <div className="font-medium">{l.name ?? "Name unavailable"} <span className="label-mono">· {TYPE_LABEL[l.locationType]}</span></div>
+        <div className="text-xs text-muted-foreground">{[l.region, l.district].filter(Boolean).join(" · ")} · {l.latitude.toFixed(3)}, {l.longitude.toFixed(3)}</div>
+        <div className="text-xs text-muted-foreground">Source: {l.sourceDataset} · {VERIFY_LABEL[l.verificationStatus]} · Capacity: {na(l.capacity)} · Last verified: {na(l.lastVerified)}</div>
+      </li>))}</ul>
   );
 }
 
@@ -83,18 +122,23 @@ export function FwiPanel({ countryCode, regionId, bbox }: Scope) {
   );
 }
 
-export function EnvPanel({ env, date }: { env?: Environment | null | undefined; date?: string | null | undefined }) {
-  if (!env) return <Section title="Environmental conditions"><Note tone="muted">Environmental data unavailable</Note></Section>;
-  const f = (v: number | null, u: string) => (v === null ? <span className="text-unavailable">Missing</span> : `${v}${u}`);
-  const rows: [string, string, React.ReactNode][] = [
-    ["T2M_MAX", "Max temp", f(env.t2mMax, "°C")], ["T2M_MIN", "Min temp", f(env.t2mMin, "°C")], ["RH2M", "Humidity", f(env.rh2m, "%")],
-    ["WS2M", "Wind", f(env.ws2m, " m/s")], ["PRECTOTCORR", "Precipitation", f(env.precip, " mm")],
-  ];
+export function EnvPanel({ point }: { point?: [number, number] | undefined }) {
+  const q = usePower(point);
+  const d = q.data;
+  const f = (v: number | null | undefined, u: string) => (v === null || v === undefined ? <span className="text-unavailable">Missing</span> : `${v}${u}`);
+  const rows: [PowerParam, string, string][] = [["T2M_MAX", "Max temp", "°C"], ["T2M_MIN", "Min temp", "°C"], ["T2M", "Mean temp", "°C"], ["RH2M", "Humidity", "%"], ["WS2M", "Wind", " m/s"], ["PRECTOTCORR", "Precipitation", " mm"], ["ALLSKY_SFC_SW_DWN", "Solar radiation", " kWh/m²"]];
   return (
-    <Section title="Environmental conditions" right={<LiveBadge />}>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">{rows.map(([k, l, v]) => (
-        <div key={k} className="rounded-sm bg-background/40 p-2"><div className="label-mono">{k}</div><div className="text-xs text-muted-foreground">{l}</div><div className="font-display text-xl">{v}</div></div>))}</div>
-      <p className="label-mono mt-2">NASA POWER · {date || env.date || "date unavailable"} · -999 values shown as Missing</p>
+    <Section title="Environmental conditions" right={d?.status === "ok" ? <LiveBadge /> : undefined}>
+      {!point ? <Note tone="muted">Environmental data unavailable</Note>
+        : q.isLoading ? <p className="text-sm text-muted-foreground">Loading NASA POWER data…</p>
+        : q.isError || d?.status === "error" ? <Note tone="error">{d?.message ?? "Unable to retrieve current data. Please try again."}</Note>
+        : !d?.latest ? <Note tone="muted">No data available for the selected area.</Note>
+        : (<>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">{rows.map(([k, l, u]) => (
+            <div key={k} className="rounded-sm bg-background/40 p-2"><div className="label-mono">{k}</div><div className="text-xs text-muted-foreground">{l}</div><div className="font-display text-xl">{f(d.latest!.values[k], u)}</div></div>))}</div>
+          <p className="label-mono mt-2">Source: NASA POWER · {d.dataset} · day {d.latest.date} · point {d.lat}, {d.lon} · retrieved {d.retrievedAt.slice(0, 16).replace("T", " ")} UTC</p>
+          <p className="mt-1 text-xs text-muted-foreground">NASA POWER publishes with a few days' delay; more recent days are missing (-999) and shown as Missing. Weather inputs only — this is not a risk prediction.</p>
+        </>)}
     </Section>
   );
 }
