@@ -38,6 +38,10 @@
   --color-shelter: var(--shelter);
   --color-report: var(--report);
   --color-unavailable: var(--unavailable);
+  --color-loc-health: var(--loc-health);
+  --color-loc-school: var(--loc-school);
+  --color-loc-religious: var(--loc-religious);
+  --color-loc-settlement: var(--loc-settlement);
 }
 
 :root {
@@ -68,6 +72,10 @@
   --shelter: oklch(0.72 0.11 230);
   --report: oklch(0.75 0.13 320);
   --unavailable: oklch(0.5 0.01 60);
+  --loc-health: oklch(0.78 0.14 170);
+  --loc-school: oklch(0.82 0.12 100);
+  --loc-religious: oklch(0.7 0.1 290);
+  --loc-settlement: oklch(0.65 0.02 70);
   --gradient-ember: radial-gradient(ellipse at top left, oklch(0.72 0.18 45 / 0.18), transparent 60%);
 }
 
