@@ -1,0 +1,95 @@
+{
+ "generatedAt": "2026-10-06",
+ "target": "satellite_fire_occurrence",
+ "grid": "1 km \u00d7 1 km cells, 30 \u00d7 30 km pilot windows",
+ "temporal": "daily (UTC)",
+ "windows": [
+  {
+   "window_id": "cd_haut_katanga_p1",
+   "country": "Democratic Republic of the Congo",
+   "admin1": "Haut-Katanga",
+   "date_range": [
+    "2020-01-01",
+    "2026-09-30"
+   ],
+   "grid_cells": 900,
+   "daily_rows": 2218500,
+   "raw_firms_detections": 11262,
+   "positive_targets": 6351,
+   "valid_negative_targets": 2212149,
+   "positive_rate": 0.002863,
+   "imbalance_ratio_neg_per_pos": 348.3,
+   "coverage_pct": {
+    "weather": 100.0,
+    "soil_moisture": 100.0,
+    "ndvi": 73.78,
+    "land_cover": 100.0,
+    "terrain_elevation": 100.0,
+    "terrain_slope": 87.11
+   },
+   "duplicate_rows": 0,
+   "leakage_passed": true,
+   "meets_minimum_thresholds": true,
+   "model_ready": false
+  },
+  {
+   "window_id": "dz_north_p1",
+   "country": "Algeria",
+   "admin1": "El Tarf",
+   "date_range": [
+    "2020-01-01",
+    "2026-09-30"
+   ],
+   "grid_cells": 900,
+   "daily_rows": 2218500,
+   "raw_firms_detections": 942,
+   "positive_targets": 364,
+   "valid_negative_targets": 2218136,
+   "positive_rate": 0.000164,
+   "imbalance_ratio_neg_per_pos": 6093.8,
+   "coverage_pct": {
+    "weather": 100.0,
+    "soil_moisture": 100.0,
+    "ndvi": 78.47,
+    "land_cover": 100.0,
+    "terrain_elevation": 100.0,
+    "terrain_slope": 87.11
+   },
+   "duplicate_rows": 0,
+   "leakage_passed": true,
+   "meets_minimum_thresholds": true,
+   "model_ready": false
+  }
+ ],
+ "blockers": [
+  "fire_observation_valid cannot yet flag cloud/smoke-obscured days: no per-cell VIIRS cloud mask is ingested, so 'valid' negatives are unverified (insufficient_observation = 0 is a limitation, not a finding)",
+  "Land cover is the latest annual Esri/IO map applied to all years (static) \u2014 not year-matched",
+  "Same-day NASA POWER weather is included although it publishes ~2\u20134 days later; operational models need a latency lag",
+  "admin2 not assigned (no admin boundary dataset connected)",
+  "Pilot windows only (30\u00d730 km each); not region- or country-wide",
+  "Weather/soil are 0.5\u00b0\u00d70.625\u00b0 POWER cells: all 1 km cells in a POWER cell share the source value (labelled, not resampled)"
+ ],
+ "split": {
+  "method": "time-based, no random split",
+  "target": "satellite_fire_occurrence",
+  "default": {
+   "train": [
+    "2020-01-01",
+    "2023-12-31"
+   ],
+   "validation": [
+    "2024-01-01",
+    "2024-12-31"
+   ],
+   "test": [
+    "2025-01-01",
+    "2026-09-30"
+   ]
+  },
+  "per_country_overrides": {},
+  "rules": [
+   "Feature engineering statistics (e.g. NDVI baselines, scalers) are fit on train only",
+   "Test period stays untouched until final evaluation"
+  ]
+ }
+}
