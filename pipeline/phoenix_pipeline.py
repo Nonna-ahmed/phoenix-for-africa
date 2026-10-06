@@ -77,6 +77,7 @@ def stage_firms(wid):
             log.append({"start": str(d), "days": n, "source": src, "status": "error", "error": str(e)[:120]})
         d += dt.timedelta(days=n)
     raw = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+    raw["version"] = raw["version"].astype(str)
     raw["country"], raw["country_code"], raw["admin1"], raw["window_id"] = w["country"], w["country_code"], w["admin1"], wid
     raw["retrieved_at"] = dt.datetime.utcnow().isoformat(timespec="seconds") + "Z"
     raw.to_parquet(f"{OUT}/raw_fire_detections_{wid}.parquet", index=False)
