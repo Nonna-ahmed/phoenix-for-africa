@@ -125,3 +125,37 @@ export const getSiteContext = createServerFn({ method: "GET" })
     if ([lc, t, p, dr].every((x) => x.status === "ok")) cache.set(key, { at: Date.now(), data: result });
     return result;
   });
+
+export interface ProbeResult { id: string; ok: boolean; checkedAt: string; message?: string }
+
+/** Live health check: a source is "Available" only if PHOENIX retrieves usable data right now. */
+export const probeSources = createServerFn({ method: "GET" }).handler(async (): Promise<ProbeResult[]> => {
+  const lat = -11.66, lon = 27.48; // Lubumbashi reference point
+  const at = now();
+  const wrap = async (id: string, f: () => Promise<boolean>): Promise<ProbeResult> => {
+    try { return { id, ok: await f(), checkedAt: at }; } catch (e) { console.error("probe", id, e); return { id, ok: false, checkedAt: at, message: "Data temporarily unavailable" }; }
+  };
+  const [lc, t, p, dr] = await Promise.all([landCover(lat, lon), terrain(lat, lon), population(lat, lon), drought(lat, lon)]);
+  const rest = await Promise.all([
+    wrap("firms", async () => {
+      const key = process.env["FIRMS_MAP_KEY"]; if (!key) return false;
+      const j = await getJson(`https://firms.modaps.eosdis.nasa.gov/mapserver/mapkey_status/?MAP_KEY=${key}`);
+      return typeof j?.current_transactions === "number" || typeof j?.transaction_limit === "number";
+    }),
+    wrap("power", async () => {
+      const j = await getJson(`https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&latitude=${lat}&longitude=${lon}&start=20250101&end=20250102&format=JSON`);
+      return Object.values(j?.properties?.parameter?.T2M ?? {}).some((v) => typeof v === "number" && v > -999);
+    }),
+    wrap("grid3", async () => {
+      const j = await getJson("https://services3.arcgis.com/BU6Aadhn6tbBEdyk/ArcGIS/rest/services/GRID3_COD_health_facilities_v9_0/FeatureServer/0/query?where=1%3D1&returnCountOnly=true&f=json");
+      return Number(j?.count) > 0;
+    }),
+  ]);
+  return [
+    ...rest,
+    { id: "landcover", ok: lc.status === "ok", checkedAt: at, message: lc.message },
+    { id: "terrain", ok: t.status === "ok", checkedAt: at, message: t.message },
+    { id: "population", ok: p.status === "ok", checkedAt: at, message: p.message },
+    { id: "soil", ok: dr.status === "ok", checkedAt: at, message: dr.message },
+  ];
+});
