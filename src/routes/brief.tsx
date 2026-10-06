@@ -77,6 +77,17 @@ function BriefPage() {
       } : null,
       infrastructure: { hospitals: hosp.data?.status === "ok" ? hosp.data.total : null, roadSegments: roads.data?.status === "ok" ? roads.data.total : null },
       aiRisk: "PHOENIX AI risk prediction not available (backend not connected).",
+      sources: [
+        { name: "Satellite fire detections", provider: "NASA FIRMS", status: f?.status ?? "unavailable", latestDate: hs.length ? hs.map((h) => h.acqDate).sort().at(-1)! : null, latency: "near real-time (~3 h)" },
+        ...grids.map((g, i) => ({ name: `Weather: ${GRID_SCALE[WVARS[i]!].label}`, provider: "NASA POWER", status: g.data?.status ?? "unavailable", latestDate: g.data?.status === "ok" ? g.data.date : null, latency: "published a few days late; not real-time" })),
+        { name: "Population density", provider: "WorldPop", status: s?.population.status ?? "unavailable", latestDate: "2020", latency: "yearly model estimate" },
+        { name: "Terrain", provider: "NASA SRTM 30 m", status: s?.terrain.status ?? "unavailable", latestDate: "2000", latency: "static" },
+        { name: "Land cover", provider: "Esri / Impact Observatory", status: s?.landCover.status ?? "unavailable", latestDate: null, latency: "yearly" },
+        { name: "Soil moisture", provider: "NASA POWER", status: s?.drought.status ?? "unavailable", latestDate: s && s.drought.status === "ok" ? s.drought.date : null, latency: "published a few days late" },
+        { name: "Hospitals & clinics", provider: "OpenStreetMap (Esri replica)", status: hosp.data?.status ?? "unavailable", latestDate: null, latency: "community-updated" },
+        { name: "Main roads", provider: "OpenStreetMap (Esri replica)", status: roads.data?.status ?? "unavailable", latestDate: null, latency: "community-updated" },
+        { name: "Verified emergency shelters", provider: "Official/humanitarian", status: "unavailable", latestDate: null, latency: "no source connected" },
+      ],
     };
   };
 
@@ -106,7 +117,7 @@ function BriefPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Coordination" title="AI Response Brief">Pick a region and time range. PHOENIX gathers the live data below and Lovable AI turns it into a short, actionable brief. Always verify on the ground — hotspots are not confirmed fires.</PageHeader>
+      <PageHeader eyebrow="Coordination" title="AI Response Brief">Pick a region and time range. PHOENIX gathers the live data below and Lovable AI turns it into a short decision-support brief. This is not a wildfire-risk prediction. Always verify on the ground — hotspots are not confirmed fires.</PageHeader>
       <div className="flex flex-wrap items-end gap-3">
         <label className="label-mono flex flex-col gap-1">Country
           <select className={sel} value={country} onChange={(e) => { setCountry(e.target.value); setRegion(regionsOf(e.target.value)[0]?.id ?? ""); setText(""); }}>
