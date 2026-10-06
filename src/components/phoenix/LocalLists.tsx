@@ -1,16 +1,32 @@
 import type { Environment } from "@/data/types";
-import { useAlerts, useFireReports, useFwi, useShelters } from "@/services/api/hooks";
+import { useAlerts, useFireReports, useFwi, useHotspots, useShelters } from "@/services/api/hooks";
+import { scopeBbox } from "@/data/registry";
 import { ApiState, LiveBadge, Note } from "./ApiState";
 import { AlertCard, Section } from "./ui";
 
 type Scope = { countryCode?: string | undefined; regionId?: string | undefined; bbox?: [number, number, number, number] | undefined };
 const na = (v: unknown) => (v === null || v === undefined || v === "" ? "Data unavailable" : String(v));
 
-export function DetectionList(_: Scope) {
+export function DetectionList({ countryCode, regionId }: Scope) {
+  const q = useHotspots(scopeBbox(countryCode, regionId), 1);
+  const d = q.data;
   return (
-    <Section title="Satellite Fire Detections">
-      <Note tone="muted">Satellite fire data not connected. NASA FIRMS (VIIRS / MODIS) integration is prepared but no feed or API key is configured yet.</Note>
-      <p className="label-mono mt-2">When connected, every detection is shown as “Not a confirmed ground fire”</p>
+    <Section title="Satellite Hotspots (NASA FIRMS)" right={d?.status === "ok" ? <LiveBadge /> : undefined}>
+      <p className="mb-2 rounded-sm bg-fire/10 p-2 text-xs text-fire">Hotspots are satellite-detected thermal anomalies. They can come from wildfires, agricultural burning, gas flares or hot surfaces — <b>not a confirmed ground fire</b>.</p>
+      {q.isLoading ? <p className="text-sm text-muted-foreground">Loading satellite data…</p>
+        : q.isError ? <Note tone="error">Unable to retrieve current data. Please try again.</Note>
+        : !d || d.status === "not_configured" ? <Note tone="muted">Satellite fire data not connected.</Note>
+        : d.status === "error" ? <Note tone="error">{d.message}</Note>
+        : d.hotspots.length === 0 ? <Note tone="muted">No hotspots detected in the last 24 hours for this area.</Note>
+        : (<>
+          <div className="label-mono mb-2">{d.total.toLocaleString()} hotspots · last 24 h{d.truncated ? ` · showing strongest ${d.hotspots.length.toLocaleString()}` : ""}</div>
+          <ul className="max-h-80 space-y-1.5 overflow-y-auto">{[...d.hotspots].sort((a, b) => (b.frp ?? 0) - (a.frp ?? 0)).slice(0, 50).map((h, i) => (
+            <li key={i} className="rounded-sm border-l-4 border-dashed border-l-fire bg-background/40 p-2 text-sm">
+              <div className="font-mono text-xs text-fire">NASA FIRMS · {h.instrument}{h.satellite ? ` · ${h.satellite}` : ""} · unconfirmed</div>
+              <div>{h.lat.toFixed(3)}, {h.lon.toFixed(3)} — {h.acqDate} {h.acqTime} UTC</div>
+              <div className="text-muted-foreground">Confidence: {na(h.confidence)} · FRP: {h.frp !== null ? `${h.frp} MW` : "Data unavailable"}</div>
+            </li>))}</ul>
+        </>)}
     </Section>
   );
 }
@@ -38,7 +54,8 @@ export function ReportList({ countryCode, regionId }: Scope) {
     <Section title="Community fire reports" right={<LiveBadge />}>
       <ApiState q={q} empty="No reports for the selected area.">{(list) => (
         <ul className="space-y-2">{list.map((r) => (
-          <li key={r.id} className="rounded-sm border-l-4 border-l-report bg-background/40 p-2 text-sm">{na(r.description)}
+          <li key={r.id} className={`rounded-sm border-l-4 bg-background/40 p-2 text-sm ${r.confirmed ? "border-l-destructive" : "border-l-report"}`}>
+            <div className={`label-mono ${r.confirmed ? "text-destructive" : ""}`}>{r.confirmed ? "Confirmed ground fire" : "Unverified report"}</div>{na(r.description)}
             <div className="label-mono">{r.lat.toFixed(3)}, {r.lon.toFixed(3)} · {na(r.reportedAt)}</div></li>))}</ul>)}
       </ApiState>
     </Section>
