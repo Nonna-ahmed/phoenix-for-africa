@@ -113,7 +113,7 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
         if (!q.isLoading && d && d.layers.some((x) => x.status === "error")) return st("error", "Data temporarily unavailable");
         const r = fromQuery(q, d ? d.locations.length : null, "locations");
         const total = d?.layers.reduce((s, x) => s + x.count, 0) ?? 0;
-        return r.kind === "ok" && d && total > d.locations.length ? st("partial", `${d.locations.length.toLocaleString()} of ${total.toLocaleString()} shown — zoom into a region for more`) : r;
+        return r.kind === "ok" && d && total > d.locations.length ? st("partial", `${d.locations.length.toLocaleString()} of ${total.toLocaleString()} shown (per-request limit)`) : r;
       }
     }
   };
@@ -153,7 +153,7 @@ function useArea(code: string, codes: string[], regionId: string | undefined, on
 }
 
 const tone: Record<LayerStatus["kind"], string> = { off: "text-muted-foreground", loading: "text-muted-foreground", ok: "text-risk-low", partial: "text-risk-medium", empty: "text-muted-foreground", unavailable: "text-unavailable", error: "text-risk-high" };
-const sourceOf = (l: LayerDef) => l.datasetIds.map((id) => DATASETS.find((d) => d.id === id)).filter(Boolean).map((d) => `${d!.provider} — ${d!.datasetName}`).join("; ") || "PHOENIX backend (community reports)";
+const sourceOf = (l: LayerDef) => l.datasetIds.map((id) => DATASETS.find((d) => d.id === id)).filter(Boolean).map((d) => `${d!.provider} — ${d!.datasetName}`).join("; ") || l.sourceText || "Source unavailable";
 
 function LayerPanel({ layers, on, statuses, toggle }: { layers: LayerDef[]; on: LayerState; statuses: Record<LayerId, LayerStatus>; toggle: (id: LayerId) => void }) {
   return (

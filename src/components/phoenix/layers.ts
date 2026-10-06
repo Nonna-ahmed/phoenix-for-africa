@@ -11,7 +11,7 @@ export type LayerId =
 
 export type LegendShape = "dot" | "ring" | "square" | "diamond";
 export interface LayerDef {
-  id: LayerId; icon: string; label: string; datasetIds: string[]; defaultOn: boolean;
+  id: LayerId; icon: string; label: string; datasetIds: string[]; sourceText?: string; defaultOn: boolean;
   legend: { color: string; label: string; shape: LegendShape }[];
   grid3Type?: LocationType;
 }
@@ -41,9 +41,9 @@ export const LAYERS: LayerDef[] = [
     legend: [{ color: "--loc-settlement", label: "Settlement", shape: "dot" }] },
   { id: "shelters_verified", icon: "🚨", label: "Verified Emergency Shelters", datasetIds: ["shelters-official"], defaultOn: true,
     legend: [{ color: "--shelter", label: "Verified emergency shelter", shape: "diamond" }] },
-  { id: "safe_locations", icon: "📍", label: "Potential Safe Locations", datasetIds: ["phoenix-models"], defaultOn: true,
+  { id: "safe_locations", icon: "📍", label: "Potential Safe Locations", datasetIds: [], sourceText: "PHOENIX backend — drc_katanga_shelters_final.csv (unverified)", defaultOn: true,
     legend: [{ color: "--layer-safe", label: "Potential safe location (unverified)", shape: "dot" }] },
-  { id: "reports", icon: "📣", label: "Fire Reports", datasetIds: [], defaultOn: true,
+  { id: "reports", icon: "📣", label: "Fire Reports", datasetIds: [], sourceText: "PHOENIX backend — community fire reports", defaultOn: true,
     legend: [{ color: "--report", label: "Community report (unverified)", shape: "dot" }, { color: "--destructive", label: "Confirmed ground fire", shape: "square" }] },
 ];
 
