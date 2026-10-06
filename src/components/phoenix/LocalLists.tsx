@@ -47,7 +47,7 @@ export function AlertList(s: Scope) {
   return <Section title="Alerts">{list.length === 0 ? <Empty>No active alerts</Empty> : <div className="space-y-2">{list.map((a) => <AlertCard key={a.id} a={a} />)}</div>}</Section>;
 }
 
-export function EnvPanel({ env }: { env?: Environment }) {
+export function EnvPanel({ env }: { env?: Environment | undefined }) {
   if (!env) return <Section title="Environmental conditions"><Empty>Environmental data unavailable</Empty></Section>;
   const f = (v: number | null, u: string) => { const c = clean(v); return c === null ? <span className="text-unavailable">Missing</span> : `${c}${u}`; };
   const rows: [string, string, React.ReactNode][] = [

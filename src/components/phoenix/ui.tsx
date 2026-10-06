@@ -8,7 +8,7 @@ export function DemoBadge() {
   return <span className="label-mono rounded-sm border border-primary/40 px-1.5 py-0.5 text-primary">Demo data</span>;
 }
 
-export function RiskPill({ p }: { p?: number | null }) {
+export function RiskPill({ p }: { p?: number | null | undefined }) {
   if (p === undefined || p === null) return <span className="label-mono rounded-sm bg-muted px-2 py-1">AI prediction n/a</span>;
   const lvl = riskLevel(p);
   const c = lvl === "HIGH" ? "bg-risk-high/20 text-risk-high" : lvl === "MEDIUM" ? "bg-risk-medium/20 text-risk-medium" : "bg-risk-low/20 text-risk-low";

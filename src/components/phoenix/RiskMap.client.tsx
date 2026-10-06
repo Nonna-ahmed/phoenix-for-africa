@@ -5,7 +5,7 @@ import { COUNTRIES, DETECTIONS, REPORTS, SHELTERS } from "@/data/registry";
 import { riskLevel } from "@/data/types";
 
 export type Layers = { risk: boolean; fires: boolean; shelters: boolean; reports: boolean; boundaries: boolean };
-export interface MapProps { countryCode?: string; regionId?: string; layers?: Layers; riskFilter?: string; height?: number }
+export interface MapProps { countryCode?: string | undefined; regionId?: string | undefined; layers?: Layers; riskFilter?: string; height?: number }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
 
