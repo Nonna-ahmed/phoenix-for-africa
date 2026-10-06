@@ -53,8 +53,8 @@ export function usePower(point: [number, number] | undefined, days = 14) {
 }
 
 /** Shelters & safe locations from the source registry (GRID3 etc.), per country + area. */
-export function useSafeLocations(countryCode: string | undefined, bbox: [number, number, number, number] | undefined, enabled = true) {
-  return useQuery({ ...opts, staleTime: 6 * 3600_000, queryKey: ["safe-locations", countryCode, bbox], enabled: enabled && !!countryCode && !!bbox, queryFn: () => getSafeLocations({ data: { countryCode: countryCode!, bbox: bbox! } }) });
+export function useSafeLocations(countryCode: string | undefined, bbox: [number, number, number, number] | undefined, enabled = true, types?: string[]) {
+  return useQuery({ ...opts, staleTime: 6 * 3600_000, queryKey: ["safe-locations", countryCode, bbox, types], enabled: enabled && !!countryCode && !!bbox, queryFn: () => getSafeLocations({ data: { countryCode: countryCode!, bbox: bbox!, ...(types ? { types } : {}) } }) });
 }
 
 /** Land cover, terrain, population exposure and soil moisture for a point (each source independent). */

@@ -42,6 +42,12 @@
   --color-loc-school: var(--loc-school);
   --color-loc-religious: var(--loc-religious);
   --color-loc-settlement: var(--loc-settlement);
+  --color-layer-weather: var(--layer-weather);
+  --color-layer-soil: var(--layer-soil);
+  --color-layer-landcover: var(--layer-landcover);
+  --color-layer-terrain: var(--layer-terrain);
+  --color-layer-pop: var(--layer-pop);
+  --color-layer-safe: var(--layer-safe);
 }
 
 :root {
@@ -76,6 +82,12 @@
   --loc-school: oklch(0.82 0.12 100);
   --loc-religious: oklch(0.7 0.1 290);
   --loc-settlement: oklch(0.65 0.02 70);
+  --layer-weather: oklch(0.78 0.1 210);
+  --layer-soil: oklch(0.62 0.12 60);
+  --layer-landcover: oklch(0.7 0.16 140);
+  --layer-terrain: oklch(0.7 0.05 30);
+  --layer-pop: oklch(0.75 0.15 350);
+  --layer-safe: oklch(0.85 0.08 200);
   --gradient-ember: radial-gradient(ellipse at top left, oklch(0.72 0.18 45 / 0.18), transparent 60%);
 }
 
