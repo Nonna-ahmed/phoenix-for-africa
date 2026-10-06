@@ -68,10 +68,8 @@ async function terrain(lat: number, lon: number): Promise<Terrain> {
     const dzdx = ((c + 2 * f + i) - (a + 2 * dd + g)) / (8 * cellX);
     const dzdy = ((g + 2 * h + i) - (a + 2 * b + c)) / (8 * cell); // positive = rises to south
     const slope = (Math.atan(Math.hypot(dzdx, dzdy)) * 180) / Math.PI;
-    // aspect: compass direction the slope faces (downhill), 0 = north
-    let aspect = (Math.atan2(-dzdx, dzdy) * 180) / Math.PI; // downhill vector (-dzdx east, +dzdy... north)
-    aspect = (450 - (aspect + 90)) % 360;
-    aspect = (Math.atan2(-dzdx, dzdy) * 180) / Math.PI; aspect = (90 - aspect + 360) % 360;
+    // aspect: compass bearing the slope faces (downhill), 0 = north, 90 = east
+    const aspect = ((Math.atan2(-dzdx, dzdy) * 180) / Math.PI + 360) % 360;
     return { ...base, status: "ok", elevation: e, slope: Math.round(slope * 10) / 10, aspect: slope < 0.5 ? null : Math.round(aspect) };
   } catch (err) {
     console.error("terrain", err);
