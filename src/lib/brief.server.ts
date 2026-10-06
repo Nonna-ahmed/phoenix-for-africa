@@ -31,6 +31,7 @@ export type BriefInputT = z.infer<typeof BriefInput>;
 const INSTRUCTIONS = `You write wildfire response briefs for emergency coordinators in Africa (PHOENIX platform).
 Rules:
 - Use ONLY the data in the JSON. Never invent numbers, places, shelters, roads or facilities. If a field is null or unavailable, say "data unavailable".
+- Hotspot FRP is fire radiative power in megawatts (MW); hotspot times are UTC. Soil moisture is 0 (dry) to 1 (saturated).
 - NASA FIRMS hotspots are satellite thermal anomalies, NOT confirmed fires (can be agricultural burning, gas flares). Say so.
 - Population figures are modelled estimates (WorldPop), never exact counts. Weather values are NASA POWER grid-cell values with a few days' delay.
 - Hospitals/roads come from OpenStreetMap (completeness varies). Hospitals are not shelters. Roads are not approved evacuation routes.

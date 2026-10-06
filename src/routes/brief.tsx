@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { COUNTRIES, scopeBbox } from "@/data/registry";
 import { PageHeader, Section } from "@/components/phoenix/ui";
 import { Note } from "@/components/phoenix/ApiState";
@@ -140,7 +141,7 @@ function BriefPage() {
           <Section title={r ? `Brief — ${r.name}, ${c?.name}` : "Brief"}>
             {err && <Note tone="error">{err}</Note>}
             {!text && !err && <p className="text-sm text-muted-foreground">{busy ? "Writing brief…" : "No brief yet. Press “Generate brief”."}</p>}
-            {text && <article className="prose prose-sm prose-invert max-w-none [&_h2]:mt-4 [&_h2]:text-base [&_h2]:font-semibold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"><ReactMarkdown>{text}</ReactMarkdown></article>}
+            {text && <article className="prose prose-sm prose-invert max-w-none [&_h2]:mt-4 [&_h2]:text-base [&_h2]:font-semibold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5 [&_table]:w-full [&_td]:border-t [&_td]:py-1 [&_td]:pr-3 [&_th]:text-left [&_th]:pr-3"><ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown></article>}
             {text && !busy && <p className="mt-4 border-t pt-2 text-xs text-muted-foreground">AI-generated from live PHOENIX data on {new Date().toUTCString()}. Satellite hotspots are thermal anomalies, not confirmed fires; population values are estimates. Verify before acting.</p>}
           </Section>
         </div>

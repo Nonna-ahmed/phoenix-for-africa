@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] AI response brief page (region + time range, Lovable AI)
-- [x] Weather & population spatial coverage (done previous turn)
-- [ ] OSM hospitals layer
-- [ ] OSM roads layer
+- [x] AI response brief page (region + time range, Lovable AI)
+- [x] Weather & population spatial coverage
+- [x] OSM hospitals layer
+- [x] OSM roads layer
