@@ -94,3 +94,4 @@
 .leaflet-container { background: var(--background); font-family: var(--font-sans); }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--popover); color: var(--popover-foreground); border-radius: var(--radius); }
 .leaflet-control-zoom a { background: var(--card) !important; color: var(--foreground) !important; border-color: var(--border) !important; }
+.phoenix-tiles { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.4); }

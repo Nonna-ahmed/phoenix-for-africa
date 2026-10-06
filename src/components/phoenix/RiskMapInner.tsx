@@ -31,7 +31,7 @@ export default function RiskMapInner({ countryCode, regionId, layers = { risk: t
   return (
     <div style={{ height }} className="overflow-hidden rounded-md border">
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
-        <TileLayer attribution='&copy; OpenStreetMap &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+        <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" className="phoenix-tiles" />
         <Fly center={center} zoom={zoom} />
         {layers.boundaries && COUNTRIES.filter((c) => !countryCode || c.code === countryCode).map((c) => (
           <CircleMarker key={c.code} center={c.center} radius={4} pathOptions={{ color: css("--muted-foreground"), weight: 1, fillOpacity: 0.3 }}>
