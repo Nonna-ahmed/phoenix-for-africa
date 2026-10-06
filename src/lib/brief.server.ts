@@ -89,7 +89,7 @@ Keep it under 450 words.`;
 export async function handleBrief(request: Request): Promise<Response> {
   let input: BriefInputT;
   try { input = BriefInput.parse(await request.json()); }
-  catch { return Response.json({ error: "Invalid brief request." }, { status: 400 }); }
+  catch (e) { console.error("brief invalid", e); return Response.json({ error: "Invalid brief request." }, { status: 400 }); }
   return streamAi(request, INSTRUCTIONS, `Write the response brief from this PHOENIX data (JSON):\n${JSON.stringify(input)}`);
 }
 
