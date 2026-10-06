@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getCountry, getModel } from "@/data/registry";
 import { riskLevel } from "@/data/types";
-import { RiskMap, MapLegend } from "@/components/phoenix/RiskMap";
+import { RiskMap } from "@/components/phoenix/RiskMap";
 import { Empty, PageHeader, Section } from "@/components/phoenix/ui";
 import { ApiState, LiveBadge } from "@/components/phoenix/ApiState";
 import { AlertList, DetectionList, EnvPanel, FwiPanel, ReportList, ShelterList } from "@/components/phoenix/LocalLists";
@@ -50,7 +50,7 @@ function RegionPage() {
               </>);
             }}</ApiState>)}
         </Section>
-        <div className="lg:col-span-2"><Section title="Region map"><RiskMap countryCode={c.code} regionId={r.id} height={360} /><MapLegend /></Section></div>
+        <div className="lg:col-span-2"><Section title="Region map"><RiskMap countryCode={c.code} regionId={r.id} height={360} /></Section></div>
       </div>
       <EnvPanel point={r.center} />
       <SitePanel point={r.center} />
