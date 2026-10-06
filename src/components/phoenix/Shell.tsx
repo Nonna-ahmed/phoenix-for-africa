@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 
 const NAV = [
   ["/", "Dashboard"], ["/map", "Africa Risk Map"], ["/countries", "Countries"], ["/alerts", "Alerts"], ["/fires", "Active Fires"],
-  ["/shelters", "Shelters"], ["/reports", "Fire Reports"], ["/assistance", "Assistance"], ["/models", "Models & Data"], ["/about", "About"],
+  ["/shelters", "Shelters"], ["/reports", "Fire Reports"], ["/assistance", "Assistance"], ["/models", "Models & Data"], ["/data-sources", "Data Sources"], ["/about", "About"],
 ] as const;
 
 export function Shell({ children }: { children: ReactNode }) {

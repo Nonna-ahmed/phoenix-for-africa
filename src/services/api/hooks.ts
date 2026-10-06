@@ -1,6 +1,7 @@
 import { getSafeLocations } from "@/lib/locations.functions";
 import { getPowerDaily } from "@/lib/power.functions";
 import { getFirmsHotspots } from "@/lib/firms.functions";
+import { getSiteContext } from "@/lib/site.functions";
 import { useQuery } from "@tanstack/react-query";
 import { apiBaseUrl } from "./client";
 import { getAlerts, getFireReports, getFwi, getRiskMap, getShelters, type AreaQuery } from "./endpoints";
@@ -54,4 +55,9 @@ export function usePower(point: [number, number] | undefined, days = 14) {
 /** Shelters & safe locations from the source registry (GRID3 etc.), per country + area. */
 export function useSafeLocations(countryCode: string | undefined, bbox: [number, number, number, number] | undefined, enabled = true) {
   return useQuery({ ...opts, staleTime: 6 * 3600_000, queryKey: ["safe-locations", countryCode, bbox], enabled: enabled && !!countryCode && !!bbox, queryFn: () => getSafeLocations({ data: { countryCode: countryCode!, bbox: bbox! } }) });
+}
+
+/** Land cover, terrain, population exposure and soil moisture for a point (each source independent). */
+export function useSiteContext(point: [number, number] | undefined) {
+  return useQuery({ ...opts, staleTime: 12 * 3600_000, queryKey: ["site", point], enabled: !!point, queryFn: () => getSiteContext({ data: { lat: point![0], lon: point![1] } }) });
 }
