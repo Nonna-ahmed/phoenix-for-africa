@@ -5,7 +5,7 @@
 import type { LocationType } from "@/data/locations";
 
 export type LayerId =
-  | "fires" | "risk" | "weather" | "soil" | "landcover" | "terrain" | "population"
+  | "fires" | "risk" | "weather" | "soil" | "ndvi" | "landcover" | "terrain" | "population"
   | "grid3_health" | "grid3_school" | "grid3_religious" | "grid3_settlement"
   | "osm_hospitals" | "osm_roads"
   | "shelters_verified" | "safe_locations" | "reports";
@@ -26,6 +26,8 @@ export const LAYERS: LayerDef[] = [
     legend: [{ color: "--layer-weather", label: "Weather reading (region point)", shape: "square" }] },
   { id: "soil", icon: "🌱", label: "Soil Moisture / Dryness", datasetIds: ["power-soil"], defaultOn: false,
     legend: [{ color: "--layer-soil", label: "Soil moisture (region point)", shape: "square" }] },
+  { id: "ndvi", icon: "🌿", label: "Vegetation / NDVI", datasetIds: ["ndvi"], defaultOn: false,
+    legend: [{ color: "--layer-landcover", label: "NDVI (MODIS 250 m, 16-day) — vegetation indicator, not fire risk", shape: "square" }] },
   { id: "landcover", icon: "🌳", label: "Land Cover", datasetIds: ["io-lulc"], defaultOn: false,
     legend: [{ color: "--layer-landcover", label: "Land-cover class (region point)", shape: "square" }] },
   { id: "terrain", icon: "🏔️", label: "Terrain", datasetIds: ["srtm"], defaultOn: false,
