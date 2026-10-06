@@ -17,3 +17,5 @@
 - Normalizers return null for absent fields and treat NASA POWER -999 as missing — the UI shows "Data unavailable"/"Missing" instead of invented values.
 - NASA FIRMS is called only from `src/lib/firms.functions.ts` (server fn, key `FIRMS_MAP_KEY`, server-side cap + cache) — keeps the MAP_KEY private and the browser light.
 - Leaflet map lives in `RiskMapInner.tsx`, loaded lazily behind ClientOnly — Leaflet breaks SSR and `*.client.*` names are rejected by the SSR build.
+- NASA POWER weather comes from `src/lib/power.functions.ts` (server fn, cached, -999 → null) — country-independent, keyless, provenance returned with every result.
+- Shelters/safe locations use the `SafeLocation` schema (`src/data/locations.ts`) and the per-country source registry (`src/data/sources.ts`), fetched by `src/lib/locations.functions.ts` — a location is a confirmed shelter only if `isEmergencyShelter` and official/humanitarian-verified; GRID3 is never a shelter registry.
