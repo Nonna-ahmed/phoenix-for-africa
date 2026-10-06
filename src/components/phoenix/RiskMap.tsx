@@ -39,7 +39,7 @@ function useArea(code: string, p: { countryCode?: string | undefined; regionId?:
     enabled,
     risk: useRiskMap(L.risk ? area : null),
     shelters: useShelters(L.shelters && code === "CD" ? area : null), // Algeria: no shelter dataset
-    reports: useFireReports(L.reports && area ? area : { country: "__none__" }),
+    reports: useFireReports(L.reports ? area : null),
   };
 }
 

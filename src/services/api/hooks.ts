@@ -19,6 +19,6 @@ export function useAlerts(a: Partial<AreaQuery> = {}) {
 export function useFwi(a: AreaQuery | null) {
   return useQuery({ ...opts, queryKey: ["fwi", a], enabled: !!a && !!apiBaseUrl(), queryFn: ({ signal }) => getFwi(a!, signal) });
 }
-export function useFireReports(a: Partial<AreaQuery> = {}) {
-  return useQuery({ ...opts, queryKey: ["fire-reports", a], enabled: !!apiBaseUrl(), queryFn: ({ signal }) => getFireReports(a, signal) });
+export function useFireReports(a: Partial<AreaQuery> | null = {}) {
+  return useQuery({ ...opts, queryKey: ["fire-reports", a], enabled: !!a && !!apiBaseUrl(), queryFn: ({ signal }) => getFireReports(a!, signal) });
 }
