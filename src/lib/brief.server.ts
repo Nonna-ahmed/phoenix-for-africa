@@ -31,7 +31,7 @@ export const BriefInput = z.object({
   }).nullable(),
   infrastructure: z.object({ hospitals: z.number().nullable(), roadSegments: z.number().nullable() }),
   aiRisk: z.string(),
-  sources: z.array(z.object({ name: z.string(), provider: z.string(), status: z.string(), latestDate: z.string().nullable(), latency: z.string() })).max(12),
+  sources: z.array(z.object({ name: z.string(), provider: z.string(), status: z.string(), latestDate: z.string().nullable(), latency: z.string() })).max(20),
 });
 export type BriefInputT = z.infer<typeof BriefInput>;
 
@@ -69,7 +69,7 @@ export const PlanInput = z.object({
     elevationM: z.object({ min: nn2, max: nn2 }), densityPerKm2: z.object({ min: nn2, max: nn2, mean: nn2 }),
     retrievedAt: z.string(),
   }).nullable(),
-  sources: z.array(z.object({ name: z.string(), provider: z.string(), status: z.string(), latestDate: z.string().nullable(), latency: z.string() })).max(12),
+  sources: z.array(z.object({ name: z.string(), provider: z.string(), status: z.string(), latestDate: z.string().nullable(), latency: z.string() })).max(20),
 });
 export type PlanInputT = z.infer<typeof PlanInput>;
 
