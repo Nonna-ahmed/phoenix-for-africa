@@ -39,11 +39,12 @@ def bbox(w):
     return (w["lon"] - dlon, w["lat"] - dlat, w["lon"] + dlon, w["lat"] + dlat)
 
 
-def get(url, tries=4, **kw):
+def get(url, tries=8, **kw):
     for i in range(tries):
         try:
             r = S.get(url, timeout=120, **kw)
             if r.status_code == 200: return r
+            if "transaction limit" in r.text: time.sleep(120); continue  # FIRMS 10-minute transaction cap
             if r.status_code in (429, 500, 502, 503, 504): time.sleep(5 * (i + 1)); continue
             raise RuntimeError(f"{r.status_code} {r.text[:200]}")
         except requests.RequestException:
