@@ -10,6 +10,7 @@ import { apiBaseUrl } from "@/services/api/client";
 import { getOsmHospitals, getOsmRoads } from "@/lib/osm.functions";
 import { getPowerGrid, type GridParam, type GridResult } from "@/lib/grid.functions";
 import { GRID_SCALE, LC_LEGEND, POP_BREAKS, SOIL_PARAMS, WEATHER_PARAMS, scaleColor, type RasterId } from "@/data/rasters";
+import { getVegetation } from "@/lib/vegetation.functions";
 import { LAYERS, defaultLayerState, type LayerDef, type LayerId, type LayerState, type LayerStatus } from "./layers";
 
 const Inner = lazy(() => import("./RiskMapInner"));
@@ -56,6 +57,7 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
   const [wVar, setWVar] = useState<GridParam>("T2M_MAX");
   const [sVar, setSVar] = useState<GridParam>("GWETROOT");
   const weatherQ = useQuery({ queryKey: ["grid", bbox, wVar], enabled: on.weather, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: wVar } }) });
+  const ndviQ = useQuery({ queryKey: ["ndvi", bbox], enabled: on.ndvi, staleTime: 24 * 3600_000, retry: 1, queryFn: () => getVegetation({ data: { bbox: [...bbox] as [number, number, number, number] } }) });
   const soilQ = useQuery({ queryKey: ["grid", bbox, sVar], enabled: on.soil, staleTime: 6 * 3600_000, retry: 1, queryFn: () => getPowerGrid({ data: { bbox, param: sVar } }) });
 
   // OpenStreetMap hospitals and main roads, only while on
@@ -120,6 +122,14 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
       }
       case "weather": return gridStatus(weatherQ);
       case "soil": return gridStatus(soilQ);
+      case "ndvi": {
+        if (ndviQ.isLoading) return st("loading", "Loading NASA MODIS pixels…");
+        const d = ndviQ.data;
+        if (ndviQ.isError || !d || d.status === "error") return st("unavailable", "Unavailable — NASA MODIS service did not return data");
+        if (d.status === "limited") return st("unavailable", d.message ?? "Select a region");
+        if (d.summary.valid === 0) return st("empty", `No valid pixels (QA) · composite ${d.compositeDate}`);
+        return st("partial", `${d.summary.valid}/${d.summary.total} valid 250 m pixels · 16-day composite from ${d.compositeDate}`);
+      }
       case "landcover": return rasterStatus("landcover", "Raster · 10 m source, shown at screen resolution · click for class");
       case "terrain": return rasterStatus("terrain", "Hillshade raster · click for elevation & slope (SRTM 30 m)");
       case "population": return rasterStatus("population", "Raster · 1 km density, 2020 · click for value");
@@ -152,7 +162,7 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
       {open && <LayerPanel layers={visible} on={on} statuses={statuses} toggle={(id) => setOn((s) => ({ ...s, [id]: !s[id] }))} />}
       <Map countryCode={countryCode} regionId={regionId} riskFilter={riskFilter} height={height} on={{ ...on, ...Object.fromEntries(LAYERS.filter((l) => !visible.includes(l)).map((l) => [l.id, false])) } as LayerState}
         risk={areas.flatMap((a) => a.risk.data ?? [])} shelters={areas.flatMap((a) => a.shelters.data ?? [])} reports={areas.flatMap((a) => a.reports.data ?? [])}
-        hotspots={fires.data?.hotspots} locations={locations} grids={{ weather: weatherQ.data, soil: soilQ.data }} hospitals={hospQ.data?.hospitals} roads={roadQ.data?.roads} onRaster={onRaster} onBounds={onBounds} />
+        hotspots={fires.data?.hotspots} locations={locations} grids={{ weather: weatherQ.data, soil: soilQ.data }} ndvi={ndviQ.data} hospitals={hospQ.data?.hospitals} roads={roadQ.data?.roads} onRaster={onRaster} onBounds={onBounds} />
       <Legend layers={visible.filter((l) => on[l.id])} statuses={statuses} vars={{ weather: [wVar, setWVar], soil: [sVar, setSVar] }} />
     </div>
   );
@@ -212,6 +222,7 @@ function VarPick({ v, opts }: { v: VarState; opts: GridParam[] }) {
 }
 function Extra({ id, vars }: { id: LayerId; vars: { weather: VarState; soil: VarState } }) {
   if (id === "weather") return <><VarPick v={vars.weather} opts={WEATHER_PARAMS} /><Ramp p={vars.weather[0]} /><span className="text-muted-foreground">Real POWER grid-cell values, not interpolated</span></>;
+  if (id === "ndvi") return <><span className="h-2 w-24 rounded-sm" style={{ background: "linear-gradient(90deg,#a0522d,#e8d36a,#7cc35a,#1f7a32)" }} /><span className="text-muted-foreground">NDVI 0 → 0.9 · grey = excluded by QA (cloud/snow/fill) · NASA MOD13Q1.061, 250 m, 16-day</span></>;
   if (id === "soil") return <><VarPick v={vars.soil} opts={SOIL_PARAMS} /><Ramp p={vars.soil[0]} /><span className="text-muted-foreground">0 = dry, 1 = saturated</span></>;
   if (id === "landcover") return <>{LC_LEGEND.map(([c, l]) => <span key={l} className="flex items-center gap-1 text-muted-foreground"><span className="h-2.5 w-2.5" style={{ background: c }} />{l}</span>)}</>;
   if (id === "population") return <>{POP_BREAKS.map(([a, b, c]) => <span key={a} className="flex items-center gap-1 text-muted-foreground"><span className="h-2.5 w-2.5" style={{ background: `rgb(${c.join(",")})` }} />{b > 1e6 ? `${a.toLocaleString()}+` : `${a}–${b.toLocaleString()}`} /km²</span>)}<span className="text-muted-foreground">Estimated density, not exact counts</span></>;
@@ -226,7 +237,7 @@ function Legend({ layers, statuses, vars }: { layers: LayerDef[]; statuses: Reco
       {layers.map((l) => (
         <div key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="font-medium">{l.icon} {l.label}</span>
-          {["weather", "soil", "landcover", "population", "terrain"].includes(l.id) ? <Extra id={l.id} vars={vars} /> : l.legend.map((e) => <span key={e.label} className="flex items-center gap-1.5 text-muted-foreground"><Swatch color={e.color} shape={e.shape} />{e.label}</span>)}
+          {["weather", "soil", "ndvi", "landcover", "population", "terrain"].includes(l.id) ? <Extra id={l.id} vars={vars} /> : l.legend.map((e) => <span key={e.label} className="flex items-center gap-1.5 text-muted-foreground"><Swatch color={e.color} shape={e.shape} />{e.label}</span>)}
           <span className={tone[statuses[l.id].kind]}>· {statuses[l.id].text}</span>
         </div>
       ))}

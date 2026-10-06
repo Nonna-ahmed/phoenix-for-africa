@@ -7,6 +7,7 @@ import { riskLevel } from "@/data/types";
 import type { ApiReport, ApiShelter, RiskPoint } from "@/services/api/endpoints";
 import type { Hotspot } from "@/lib/firms.functions";
 import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type SafeLocation } from "@/data/locations";
+import type { VegetationResult } from "@/lib/vegetation.functions";
 import { getPixelInfo, type PixelInfo } from "@/lib/site.functions";
 import type { GridResult } from "@/lib/grid.functions";
 import type { OsmHospital, OsmRoad } from "@/lib/osm.functions";
@@ -17,7 +18,7 @@ export type RasterStatus = (id: RasterId | "terrain", ok: boolean) => void;
 export interface MapProps {
   countryCode?: string | undefined; regionId?: string | undefined; on: LayerState; riskFilter?: string | undefined; height?: number | undefined;
   risk?: RiskPoint[] | undefined; shelters?: ApiShelter[] | undefined; reports?: ApiReport[] | undefined; hotspots?: Hotspot[] | undefined; locations?: SafeLocation[] | undefined;
-  grids?: { weather?: GridResult | undefined; soil?: GridResult | undefined }; onRaster?: RasterStatus; hospitals?: OsmHospital[] | undefined; roads?: OsmRoad[] | undefined; onBounds?: ((b: [number, number, number, number]) => void) | undefined;
+  grids?: { weather?: GridResult | undefined; soil?: GridResult | undefined }; onRaster?: RasterStatus; hospitals?: OsmHospital[] | undefined; roads?: OsmRoad[] | undefined; ndvi?: VegetationResult | undefined; onBounds?: ((b: [number, number, number, number]) => void) | undefined;
 }
 
 const css = (v: string) => (typeof window === "undefined" ? "#f60" : getComputedStyle(document.documentElement).getPropertyValue(v).trim());
@@ -30,7 +31,7 @@ function Fly({ center, zoom }: { center: [number, number]; zoom: number }) {
   return null;
 }
 
-export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], grids = {}, onRaster, hospitals = [], roads = [], onBounds }: MapProps) {
+export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "ALL", height = 520, risk = [], shelters = [], reports = [], hotspots = [], locations = [], grids = {}, onRaster, hospitals = [], roads = [], ndvi, onBounds }: MapProps) {
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
@@ -48,6 +49,7 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
         {on.population && <ViewRaster id="population" opacity={0.65} onRaster={onRaster} />}
         {on.weather && grids.weather && <GridCells g={grids.weather} />}
         {on.soil && grids.soil && <GridCells g={grids.soil} />}
+        {on.ndvi && ndvi?.status === "ok" && <NdviPixels v={ndvi} />}
         {on.osm_roads && roads.map((r) => (
           <Polyline key={r.id} positions={r.paths} pathOptions={{ color: css("--layer-road"), weight: r.highway === "motorway" || r.highway === "trunk" ? 3 : r.highway === "primary" ? 2.2 : 1.4, opacity: 0.85 }}>
             <Popup><b>{r.name ?? r.ref ?? "Unnamed road"}</b>{r.ref && r.name ? ` (${r.ref})` : ""}<br />Class: {r.highway} · Surface: {na(r.surface)}<br />Not an approved evacuation route<br />Source: OpenStreetMap contributors (ODbL) · {r.id}</Popup>
@@ -202,4 +204,25 @@ function BoundsWatch({ onBounds }: { onBounds: (b: [number, number, number, numb
   useEffect(() => { send(); }, []);
   useMapEvents({ moveend: send });
   return null;
+}
+
+export function ndviColor(v: number) {
+  const stops: [number, number[]][] = [[0, [160, 82, 45]], [0.3, [232, 211, 106]], [0.6, [124, 195, 90]], [0.9, [31, 122, 50]]];
+  const x = Math.max(0, Math.min(0.9, v));
+  for (let i = 1; i < stops.length; i++) { const [b, cb] = stops[i]!; const [a, ca] = stops[i - 1]!; if (x <= b) { const t = (x - a) / (b - a); return `rgb(${ca.map((c, k) => Math.round(c + (cb[k]! - c) * t)).join(",")})`; } }
+  return "rgb(31,122,50)";
+}
+
+/** Real MODIS 250 m pixels; QA-excluded pixels are grey, never filled. */
+function NdviPixels({ v }: { v: VegetationResult }) {
+  const h = v.pixelSizeDeg / 2;
+  return <>{v.windows.flatMap((w) => w.pixels.map((p, i) => {
+    const hw = h / Math.cos((p.lat * Math.PI) / 180);
+    return (
+      <Rectangle key={`${w.lat},${w.lon},${i}`} bounds={[[p.lat - h, p.lon - hw], [p.lat + h, p.lon + hw]]}
+        pathOptions={{ stroke: false, fillColor: p.ndvi === null ? css("--unavailable") : ndviColor(p.ndvi), fillOpacity: p.ndvi === null ? 0.3 : 0.85 }}>
+        <Popup><b>NDVI</b>: {p.ndvi === null ? "Excluded (QA)" : p.ndvi}<br />Quality: {p.qa}<br />16-day composite starting {v.compositeDate} ({v.modisDate})<br />Pixel {p.lat}, {p.lon} (~250 m)<br />Source: {v.source}<br />Product MOD13Q1 v{v.productVersion}<br /><i>Vegetation indicator only — not fire risk or drought.</i></Popup>
+      </Rectangle>
+    );
+  }))}</>;
 }
