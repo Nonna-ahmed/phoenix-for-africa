@@ -28,7 +28,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <div className="border-b bg-primary/10 px-4 py-1.5 text-center text-xs text-primary">
-        Real data coverage: Algeria & DRC via the PHOENIX backend. Satellite fire data (NASA FIRMS) is not yet connected.
+        Real data coverage: Algeria & DRC via the PHOENIX backend. Satellite hotspots: NASA FIRMS live (not confirmed ground fires).
       </div>
       <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
       <footer className="border-t px-4 py-6 text-center text-xs text-muted-foreground">
