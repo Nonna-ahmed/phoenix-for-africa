@@ -34,7 +34,7 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
   const country = COUNTRIES.find((c) => c.code === countryCode);
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
-  const zoom = region ? 8 : country?.zoom ?? 3;
+  const zoom = region ? 8 : country?.zoom ?? 3; console.log("INNER", typeof onBounds);
   const color = { HIGH: css("--risk-high"), MEDIUM: css("--risk-medium"), LOW: css("--risk-low") };
 
   return (
