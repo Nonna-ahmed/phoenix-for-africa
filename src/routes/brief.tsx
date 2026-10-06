@@ -125,7 +125,7 @@ function BriefPage() {
   };
 
   const row = (label: string, q: { isLoading: boolean; isError: boolean }, okText: string | null) => (
-    <li className="flex justify-between gap-3"><span>{label}</span><span className={q.isLoading ? "text-muted-foreground" : okText ? "text-risk-low" : "text-unavailable"}>{q.isLoading ? "Loading…" : okText ?? "Unavailable"}</span></li>
+    <li key={label} className="flex justify-between gap-3"><span>{label}</span><span className={q.isLoading ? "text-muted-foreground" : okText ? "text-risk-low" : "text-unavailable"}>{q.isLoading ? "Loading…" : okText ?? "Unavailable"}</span></li>
   );
 
   return (
