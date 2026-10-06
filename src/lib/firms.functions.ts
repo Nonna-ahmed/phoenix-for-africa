@@ -34,7 +34,7 @@ function parseCsv(text: string, source: string): Hotspot[] {
   const lines = text.trim().split(/\r?\n/);
   const header = lines.shift()?.split(",") ?? [];
   const idx = (n: string) => header.indexOf(n);
-  const [iLat, iLon, iDate, iTime, iSat, iInst, iConf, iFrp, iDn] = ["latitude", "longitude", "acq_date", "acq_time", "satellite", "instrument", "confidence", "frp", "daynight"].map(idx);
+  const [iLat, iLon, iDate, iTime, iSat, iInst, iConf, iFrp, iDn] = ["latitude", "longitude", "acq_date", "acq_time", "satellite", "instrument", "confidence", "frp", "daynight"].map(idx) as [number, number, number, number, number, number, number, number, number];
   if (iLat < 0 || iLon < 0) throw new Error(text.slice(0, 160) || "Unexpected FIRMS response");
   return lines.map((l) => {
     const c = l.split(",");

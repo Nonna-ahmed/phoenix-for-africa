@@ -15,4 +15,5 @@
 - `src/data/registry.ts` holds country/region/model metadata only, never live or demo values — adding a country must not need UI changes.
 - Mock/demo data may only live in `src/services/mock` and must be badged "Demo data" in the UI — real and demo values must never mix.
 - Normalizers return null for absent fields and treat NASA POWER -999 as missing — the UI shows "Data unavailable"/"Missing" instead of invented values.
+- NASA FIRMS is called only from `src/lib/firms.functions.ts` (server fn, key `FIRMS_MAP_KEY`, server-side cap + cache) — keeps the MAP_KEY private and the browser light.
 - Leaflet map lives in `RiskMapInner.tsx`, loaded lazily behind ClientOnly — Leaflet breaks SSR and `*.client.*` names are rejected by the SSR build.
