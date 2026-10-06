@@ -152,7 +152,7 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
       {open && <LayerPanel layers={visible} on={on} statuses={statuses} toggle={(id) => setOn((s) => ({ ...s, [id]: !s[id] }))} />}
       <Map countryCode={countryCode} regionId={regionId} riskFilter={riskFilter} height={height} on={{ ...on, ...Object.fromEntries(LAYERS.filter((l) => !visible.includes(l)).map((l) => [l.id, false])) } as LayerState}
         risk={areas.flatMap((a) => a.risk.data ?? [])} shelters={areas.flatMap((a) => a.shelters.data ?? [])} reports={areas.flatMap((a) => a.reports.data ?? [])}
-        hotspots={fires.data?.hotspots} locations={locations} grids={{ weather: weatherQ.data, soil: soilQ.data }} hospitals={hospQ.data?.hospitals} roads={roadQ.data?.roads} onRaster={onRaster} />
+        hotspots={fires.data?.hotspots} locations={locations} grids={{ weather: weatherQ.data, soil: soilQ.data }} hospitals={hospQ.data?.hospitals} roads={roadQ.data?.roads} onRaster={onRaster} onBounds={onBounds} />
       <Legend layers={visible.filter((l) => on[l.id])} statuses={statuses} vars={{ weather: [wVar, setWVar], soil: [sVar, setSVar] }} />
     </div>
   );
