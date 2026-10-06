@@ -10,33 +10,180 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AlertsRouteImport } from './routes/alerts'
+import { Route as AssistanceRouteImport } from './routes/assistance'
+import { Route as CountriesRouteImport } from './routes/countries'
+import { Route as FiresRouteImport } from './routes/fires'
+import { Route as MapRouteImport } from './routes/map'
+import { Route as ModelsRouteImport } from './routes/models'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SheltersRouteImport } from './routes/shelters'
+import { Route as CountryCountryCodeRouteImport } from './routes/country.$countryCode'
+import { Route as CountryCountryCodeRegionRegionIdRouteImport } from './routes/country.$countryCode.region.$regionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistanceRoute = AssistanceRouteImport.update({
+  id: '/assistance',
+  path: '/assistance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CountriesRoute = CountriesRouteImport.update({
+  id: '/countries',
+  path: '/countries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FiresRoute = FiresRouteImport.update({
+  id: '/fires',
+  path: '/fires',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelsRoute = ModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SheltersRoute = SheltersRouteImport.update({
+  id: '/shelters',
+  path: '/shelters',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CountryCountryCodeRoute = CountryCountryCodeRouteImport.update({
+  id: '/country/$countryCode',
+  path: '/country/$countryCode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CountryCountryCodeRegionRegionIdRoute =
+  CountryCountryCodeRegionRegionIdRouteImport.update({
+    id: '/region/$regionId',
+    path: '/region/$regionId',
+    getParentRoute: () => CountryCountryCodeRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/alerts': typeof AlertsRoute
+  '/assistance': typeof AssistanceRoute
+  '/countries': typeof CountriesRoute
+  '/fires': typeof FiresRoute
+  '/map': typeof MapRoute
+  '/models': typeof ModelsRoute
+  '/reports': typeof ReportsRoute
+  '/shelters': typeof SheltersRoute
+  '/country/$countryCode': typeof CountryCountryCodeRouteWithChildren
+  '/country/$countryCode/region/$regionId': typeof CountryCountryCodeRegionRegionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/alerts': typeof AlertsRoute
+  '/assistance': typeof AssistanceRoute
+  '/countries': typeof CountriesRoute
+  '/fires': typeof FiresRoute
+  '/map': typeof MapRoute
+  '/models': typeof ModelsRoute
+  '/reports': typeof ReportsRoute
+  '/shelters': typeof SheltersRoute
+  '/country/$countryCode': typeof CountryCountryCodeRouteWithChildren
+  '/country/$countryCode/region/$regionId': typeof CountryCountryCodeRegionRegionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/alerts': typeof AlertsRoute
+  '/assistance': typeof AssistanceRoute
+  '/countries': typeof CountriesRoute
+  '/fires': typeof FiresRoute
+  '/map': typeof MapRoute
+  '/models': typeof ModelsRoute
+  '/reports': typeof ReportsRoute
+  '/shelters': typeof SheltersRoute
+  '/country/$countryCode': typeof CountryCountryCodeRouteWithChildren
+  '/country/$countryCode/region/$regionId': typeof CountryCountryCodeRegionRegionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/alerts'
+    | '/assistance'
+    | '/countries'
+    | '/fires'
+    | '/map'
+    | '/models'
+    | '/reports'
+    | '/shelters'
+    | '/country/$countryCode'
+    | '/country/$countryCode/region/$regionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/alerts'
+    | '/assistance'
+    | '/countries'
+    | '/fires'
+    | '/map'
+    | '/models'
+    | '/reports'
+    | '/shelters'
+    | '/country/$countryCode'
+    | '/country/$countryCode/region/$regionId'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/alerts'
+    | '/assistance'
+    | '/countries'
+    | '/fires'
+    | '/map'
+    | '/models'
+    | '/reports'
+    | '/shelters'
+    | '/country/$countryCode'
+    | '/country/$countryCode/region/$regionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  AlertsRoute: typeof AlertsRoute
+  AssistanceRoute: typeof AssistanceRoute
+  CountriesRoute: typeof CountriesRoute
+  FiresRoute: typeof FiresRoute
+  MapRoute: typeof MapRoute
+  ModelsRoute: typeof ModelsRoute
+  ReportsRoute: typeof ReportsRoute
+  SheltersRoute: typeof SheltersRoute
+  CountryCountryCodeRoute: typeof CountryCountryCodeRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +195,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistance': {
+      id: '/assistance'
+      path: '/assistance'
+      fullPath: '/assistance'
+      preLoaderRoute: typeof AssistanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/countries': {
+      id: '/countries'
+      path: '/countries'
+      fullPath: '/countries'
+      preLoaderRoute: typeof CountriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fires': {
+      id: '/fires'
+      path: '/fires'
+      fullPath: '/fires'
+      preLoaderRoute: typeof FiresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/models': {
+      id: '/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shelters': {
+      id: '/shelters'
+      path: '/shelters'
+      fullPath: '/shelters'
+      preLoaderRoute: typeof SheltersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/country/$countryCode': {
+      id: '/country/$countryCode'
+      path: '/country/$countryCode'
+      fullPath: '/country/$countryCode'
+      preLoaderRoute: typeof CountryCountryCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/country/$countryCode/region/$regionId': {
+      id: '/country/$countryCode/region/$regionId'
+      path: '/region/$regionId'
+      fullPath: '/country/$countryCode/region/$regionId'
+      preLoaderRoute: typeof CountryCountryCodeRegionRegionIdRouteImport
+      parentRoute: typeof CountryCountryCodeRoute
+    }
   }
 }
 
+interface CountryCountryCodeRouteChildren {
+  CountryCountryCodeRegionRegionIdRoute: typeof CountryCountryCodeRegionRegionIdRoute
+}
+
+const CountryCountryCodeRouteChildren: CountryCountryCodeRouteChildren = {
+  CountryCountryCodeRegionRegionIdRoute: CountryCountryCodeRegionRegionIdRoute,
+}
+
+const CountryCountryCodeRouteWithChildren =
+  CountryCountryCodeRoute._addFileChildren(CountryCountryCodeRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  AlertsRoute: AlertsRoute,
+  AssistanceRoute: AssistanceRoute,
+  CountriesRoute: CountriesRoute,
+  FiresRoute: FiresRoute,
+  MapRoute: MapRoute,
+  ModelsRoute: ModelsRoute,
+  ReportsRoute: ReportsRoute,
+  SheltersRoute: SheltersRoute,
+  CountryCountryCodeRoute: CountryCountryCodeRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
