@@ -45,6 +45,23 @@ function PipelinePage() {
           </Section>
         ))}
       </div>
+      <Section title="v3 Africa expansion — country assessment (pilot areas, 30 × 30 km each)">
+        <p className="mb-3 text-sm text-muted-foreground">Historical training data availability only. "Live app" shows whether PHOENIX's live map modules cover the country — a separate question. No country has confirmed "no fire" days yet. {status.v3.density_rule}</p>
+        <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead><tr className="text-left text-xs uppercase text-muted-foreground"><th className="py-1">Country / region</th><th>Zone</th><th className="text-right">Raw hotspots</th><th className="text-right">Fire square-days</th><th className="text-right">Fire dates</th><th className="text-right">Fire cells</th><th className="text-right">NDVI</th><th className="text-right">Districts</th><th>Leakage</th><th>Density</th><th>Live app</th></tr></thead>
+          <tbody>{status.v3.countries.map((c) => (
+            <tr key={c.country} className="border-t border-border/50">
+              <td className="py-1">{c.country}<div className="text-xs text-muted-foreground">{c.admin1} · {c.setting}</div></td><td className="text-xs">{c.zone}</td>
+              <td className="text-right font-mono">{c.firms_raw_detections.toLocaleString()}</td><td className="text-right font-mono">{c.positive_square_days.toLocaleString()}</td>
+              <td className="text-right font-mono">{c.distinct_fire_dates}</td><td className="text-right font-mono">{c.grid_cells_ever_detected}</td>
+              <td className="text-right font-mono">{c.ndvi_pct}%</td><td className="text-right font-mono">{c.admin2_pct}%</td>
+              <td>{c.leakage_ok ? "PASS" : "FAIL"}</td><td className={c.event_density === "Sufficient" ? "" : "text-unavailable"}>{c.event_density}</td>
+              <td className="text-xs">{c.live_app_modules.startsWith("connected") ? "Connected" : "Not connected"}</td>
+            </tr>))}</tbody>
+        </table></div>
+        <p className="mt-3 text-sm"><b>Suggested for the first combined dataset:</b> {status.v3.recommended.join(", ")}. <b>Use with caution:</b> {status.v3.caution.join(", ")}.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Overall readiness for every country: NOT MODEL-READY — {status.v3.limitation}</p>
+      </Section>
       <Section title="Rules used">
         <ul className="list-disc space-y-1 pl-5 text-sm">{Object.values(status.rules).map((r) => <li key={r}>{r}</li>)}</ul>
       </Section>
