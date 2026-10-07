@@ -254,7 +254,7 @@ def quality(T, raw, ev, wid, checks, A):
     sparse = len(P) < 1000 or P.date.nunique() < 300
     obs_status = "BLOCKED" if cats["valid_negative_candidate"]["square_days"] == 0 else "PARTIAL"
     lc_status = "READY" if (T.land_cover_temporal_type == "year_matched").mean() > 0.9 else "STATIC-LIMITATION"
-    adm2 = "AVAILABLE" if A.admin2.notna().all() else ("PARTIAL" if A.admin2.notna().any() else "UNAVAILABLE")
+    adm2 = "AVAILABLE" if (A.admin2.notna() | (A.admin2_units_intersecting == 0)).all() else ("PARTIAL" if A.admin2.notna().any() else "UNAVAILABLE")
     warnings = [
         "Pilot window only (30 x 30 km); does not represent the full admin1 region.",
         "No valid negatives: per-cell VIIRS observation-quality (cloud/clear-land fire mask, VNP14IMG) is not yet ingested; no-hotspot days are 'insufficient_observation'.",
@@ -277,7 +277,7 @@ def quality(T, raw, ev, wid, checks, A):
         "land_cover": {"status": lc_status, "source": "Esri/Impact Observatory Sentinel-2 10 m annual LULC", "years_used": LC_YEARS,
                        "year_matched_pct": round(100 * (T.land_cover_temporal_type == "year_matched").mean(), 2), "2026_rule": "2025 map, land_cover_temporal_type = prior_year_proxy"},
         "admin2": {"status": adm2, "source": A.admin2_source.iloc[0], "unit_type": A.admin2_unit_type.iloc[0], "rule": A.admin2_assignment_rule.iloc[0],
-                   "cells_assigned": int(A.admin2.notna().sum()), "cells_crossing_boundaries": int((A.admin2_units_intersecting > 1).sum()),
+                   "cells_assigned": int(A.admin2.notna().sum()), "cells_outside_all_units_null": int(A.admin2.isna().sum()), "null_note": "cells outside every admin2 polygon (e.g. sea) are left NULL, never guessed", "cells_crossing_boundaries": int((A.admin2_units_intersecting > 1).sum()),
                    "units": A.admin2.value_counts().to_dict()},
         "missingness_pct": {c: round(100 * T[c].isna().mean(), 2) for c in feats},
         "duplicate_rows": int(T.duplicated(["grid_id", "date"]).sum()),
