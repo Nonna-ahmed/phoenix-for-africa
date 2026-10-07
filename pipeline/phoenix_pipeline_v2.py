@@ -228,7 +228,7 @@ def audit(T, ev, W, C, L, wid, N=600):
             if r.weather_observation_date > r.date - lag: m["weather_lag"] += 1
             obs = Wi.loc[(r.power_lat, r.power_lon)]
             win = obs.loc[r.date - lag - pd.Timedelta(days=6): r.date - lag]
-            if obs.loc[r.date - lag].T2M_MAX != r.t2m_max or not np.isclose(win.T2M_MAX.mean(), r.t2m_max_7d_mean, equal_nan=True): m["weather_window"] += 1
+            if obs.loc[r.date - lag].T2M_MAX != r.t2m_max or (not pd.isna(r.t2m_max_7d_mean) and not np.isclose(win.T2M_MAX.mean(), r.t2m_max_7d_mean)) or (pd.isna(r.t2m_max_7d_mean) and len(win) == 7 and win.T2M_MAX.notna().all()): m["weather_window"] += 1
             if win.index.max() > r.date - lag: m["rolling_future"] += 1
         if not pd.isna(r.soil_moisture_current):
             obs = Wi.loc[(r.power_lat, r.power_lon)]
@@ -253,7 +253,7 @@ def quality(T, raw, ev, wid, checks, A):
     feats = ["t2m_max", "rh2m", "ws2m", "precip_7d_sum", "soil_moisture_current", "ndvi_current", "land_cover_class", "elevation_m", "slope_deg_1km", "fires_previous_7d"]
     sparse = len(P) < 1000 or P.date.nunique() < 300
     obs_status = "BLOCKED" if cats["valid_negative_candidate"]["square_days"] == 0 else "PARTIAL"
-    lc_status = "READY" if (T.land_cover_temporal_type == "year_matched").mean() > 0.9 else "STATIC-LIMITATION"
+    lc_status = "READY" if (T[T.date.dt.year <= max(LC_YEARS)].land_cover_temporal_type == "year_matched").all() else "STATIC-LIMITATION"
     adm2 = "AVAILABLE" if (A.admin2.notna() | (A.admin2_units_intersecting == 0)).all() else ("PARTIAL" if A.admin2.notna().any() else "UNAVAILABLE")
     warnings = [
         "Pilot window only (30 x 30 km); does not represent the full admin1 region.",
