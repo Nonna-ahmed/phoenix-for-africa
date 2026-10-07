@@ -44,7 +44,7 @@ def get(url, tries=8, **kw):
         try:
             r = S.get(url, timeout=120, **kw)
             if r.status_code == 200: return r
-            if "transaction limit" in r.text: time.sleep(120); continue  # FIRMS 10-minute transaction cap
+            if "transaction limit" in r.text or "Invalid MAP_KEY" in r.text: time.sleep(120); continue  # FIRMS 10-minute cap (over-limit also answers "Invalid MAP_KEY")
             if r.status_code in (429, 500, 502, 503, 504): time.sleep(5 * (i + 1)); continue
             raise RuntimeError(f"{r.status_code} {r.text[:200]}")
         except requests.RequestException:
@@ -77,6 +77,7 @@ def stage_firms(wid):
             log.append({"start": str(d), "days": n, "source": src, "status": "error", "error": str(e)[:120]})
         d += dt.timedelta(days=n)
     raw = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+    if raw.empty: raw = pd.DataFrame(columns=["latitude", "longitude", "acq_date", "confidence", "frp", "version"])
     raw["version"] = raw["version"].astype(str)
     raw["country"], raw["country_code"], raw["admin1"], raw["window_id"] = w["country"], w["country_code"], w["admin1"], wid
     raw["retrieved_at"] = dt.datetime.utcnow().isoformat(timespec="seconds") + "Z"
