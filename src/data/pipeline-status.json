@@ -1,8 +1,15 @@
 {
- "generatedAt": "2026-10-06",
+ "version": "v2_blocker_resolution",
+ "generatedAt": "2026-10-07",
  "target": "satellite_fire_occurrence",
- "grid": "1 km \u00d7 1 km cells, 30 \u00d7 30 km pilot windows",
+ "grid": "1 km × 1 km cells, 30 × 30 km pilot windows",
  "temporal": "daily (UTC)",
+ "rules": {
+  "observation": "positive = >=1 VIIRS S-NPP (FIRMS SP archive to 2026-06-30, NRT after) detection with confidence nominal/high in the cell on the UTC date; valid_negative_candidate = no detection AND per-cell evidence of a usable clear observation (requires VIIRS fire-mask product; none ingested -> 0 rows); insufficient_observation = no detection, FIRMS data present for the date, observation quality unknown; missing_observation = FIRMS request failed or date outside product availability (FIRMS data_availability API). Cloudiness from weather is NOT used.",
+  "weather": "POWER_AVAILABILITY_LAG_DAYS = 3 (conservative; exact historical publication dates are not published per record). For prediction date D, weather and soil-moisture features use observation_date = D - lag; rolling windows end at D - lag. Physical values unchanged.",
+  "landCover": "Esri/Impact Observatory annual 10 m map matched to each year 2020–2025; 2026 dates use the 2025 map (flagged prior_year_proxy).",
+  "admin2": "geoBoundaries ADM2 (DRC: OCHA territories/cities; Algeria: UNHCR/GAUL communes), maximum-area overlap per 1 km cell; cells outside every unit (sea) stay empty."
+ },
  "windows": [
   {
    "window_id": "cd_haut_katanga_p1",
@@ -13,24 +20,70 @@
     "2026-09-30"
    ],
    "grid_cells": 900,
+   "pilot_area_km2": 900,
    "daily_rows": 2218500,
-   "raw_firms_detections": 11262,
-   "positive_targets": 6351,
-   "valid_negative_targets": 2212149,
-   "positive_rate": 0.002863,
-   "imbalance_ratio_neg_per_pos": 348.3,
-   "coverage_pct": {
-    "weather": 100.0,
-    "soil_moisture": 100.0,
-    "ndvi": 73.78,
-    "land_cover": 100.0,
-    "terrain_elevation": 100.0,
-    "terrain_slope": 87.11
+   "observation_validity": {
+    "positive": {
+     "square_days": 6351,
+     "pct": 0.286
+    },
+    "valid_negative_candidate": {
+     "square_days": 0,
+     "pct": 0.0
+    },
+    "insufficient_observation": {
+     "square_days": 2212149,
+     "pct": 99.714
+    },
+    "missing_observation": {
+     "square_days": 0,
+     "pct": 0.0
+    }
    },
-   "duplicate_rows": 0,
-   "leakage_passed": true,
-   "meets_minimum_thresholds": true,
-   "model_ready": false
+   "positive_samples": {
+    "raw_detections": 11262,
+    "qualifying_detections_in_window": 9919,
+    "positive_square_days": 6351,
+    "positive_dates": 982,
+    "positive_grid_cells": 877
+   },
+   "missingness_pct": {
+    "t2m_max": 0.12,
+    "rh2m": 0.12,
+    "ws2m": 0.12,
+    "precip_7d_sum": 0.37,
+    "soil_moisture_current": 0.12,
+    "ndvi_current": 26.22,
+    "land_cover_class": 0.0,
+    "elevation_m": 0.0,
+    "slope_deg_1km": 12.89,
+    "fires_previous_7d": 0.28
+   },
+   "status": {
+    "pipeline_execution": "PASS",
+    "observation_validity": "BLOCKED",
+    "weather_availability": "READY",
+    "land_cover_temporal": "READY",
+    "admin2": "AVAILABLE",
+    "spatial_coverage": "PILOT",
+    "leakage_audit": "PASS"
+   },
+   "readiness": "not model-ready",
+   "warnings": [
+    "Pilot window only (30 x 30 km); does not represent the full admin1 region.",
+    "No valid negatives: per-cell VIIRS observation-quality (cloud/clear-land fire mask, VNP14IMG) is not yet ingested; no-hotspot days are 'insufficient_observation'.",
+    "Land cover for 2026 dates uses the 2025 annual map (prior_year_proxy); 2020-2025 are year-matched. Land cover is a single 10 m centroid pixel per 1 km cell.",
+    "NASA POWER cells are ~55 x 70 km: all 1 km cells inside one POWER cell share its value (no resampling)."
+   ],
+   "admin2_units": [
+    "Kipushi",
+    "Lubumbashi"
+   ],
+   "leakage": {
+    "rows_checked": 600,
+    "mismatches": 0,
+    "passed": true
+   }
   },
   {
    "window_id": "dz_north_p1",
@@ -41,33 +94,86 @@
     "2026-09-30"
    ],
    "grid_cells": 900,
+   "pilot_area_km2": 900,
    "daily_rows": 2218500,
-   "raw_firms_detections": 942,
-   "positive_targets": 364,
-   "valid_negative_targets": 2218136,
-   "positive_rate": 0.000164,
-   "imbalance_ratio_neg_per_pos": 6093.8,
-   "coverage_pct": {
-    "weather": 100.0,
-    "soil_moisture": 100.0,
-    "ndvi": 78.47,
-    "land_cover": 100.0,
-    "terrain_elevation": 100.0,
-    "terrain_slope": 87.11
+   "observation_validity": {
+    "positive": {
+     "square_days": 364,
+     "pct": 0.016
+    },
+    "valid_negative_candidate": {
+     "square_days": 0,
+     "pct": 0.0
+    },
+    "insufficient_observation": {
+     "square_days": 2218136,
+     "pct": 99.984
+    },
+    "missing_observation": {
+     "square_days": 0,
+     "pct": 0.0
+    }
    },
-   "duplicate_rows": 0,
-   "leakage_passed": true,
-   "meets_minimum_thresholds": true,
-   "model_ready": false
+   "positive_samples": {
+    "raw_detections": 942,
+    "qualifying_detections_in_window": 778,
+    "positive_square_days": 364,
+    "positive_dates": 79,
+    "positive_grid_cells": 230
+   },
+   "missingness_pct": {
+    "t2m_max": 0.12,
+    "rh2m": 0.12,
+    "ws2m": 0.12,
+    "precip_7d_sum": 0.37,
+    "soil_moisture_current": 0.12,
+    "ndvi_current": 21.53,
+    "land_cover_class": 0.0,
+    "elevation_m": 0.0,
+    "slope_deg_1km": 12.89,
+    "fires_previous_7d": 0.28
+   },
+   "status": {
+    "pipeline_execution": "PASS",
+    "observation_validity": "BLOCKED",
+    "weather_availability": "READY",
+    "land_cover_temporal": "READY",
+    "admin2": "AVAILABLE",
+    "spatial_coverage": "PILOT",
+    "leakage_audit": "PASS"
+   },
+   "readiness": "not model-ready",
+   "warnings": [
+    "Pilot window only (30 x 30 km); does not represent the full admin1 region.",
+    "No valid negatives: per-cell VIIRS observation-quality (cloud/clear-land fire mask, VNP14IMG) is not yet ingested; no-hotspot days are 'insufficient_observation'.",
+    "Land cover for 2026 dates uses the 2025 annual map (prior_year_proxy); 2020-2025 are year-matched. Land cover is a single 10 m centroid pixel per 1 km cell.",
+    "NASA POWER cells are ~55 x 70 km: all 1 km cells inside one POWER cell share its value (no resampling).",
+    "Fire-event sample is currently too sparse for reliable independent model training/evaluation in this pilot area."
+   ],
+   "admin2_units": [
+    "El Kala",
+    "Bougous",
+    "Bouteldja",
+    "El-Tarf",
+    "Ain El Assel",
+    "Berrihane",
+    "Chefia",
+    "Zitouna",
+    "Lac Des Oiseaux"
+   ],
+   "leakage": {
+    "rows_checked": 600,
+    "mismatches": 0,
+    "passed": true
+   }
   }
  ],
- "blockers": [
-  "fire_observation_valid cannot yet flag cloud/smoke-obscured days: no per-cell VIIRS cloud mask is ingested, so 'valid' negatives are unverified (insufficient_observation = 0 is a limitation, not a finding)",
-  "Land cover is the latest annual Esri/IO map applied to all years (static) \u2014 not year-matched",
-  "Same-day NASA POWER weather is included although it publishes ~2\u20134 days later; operational models need a latency lag",
-  "admin2 not assigned (no admin boundary dataset connected)",
-  "Pilot windows only (30\u00d730 km each); not region- or country-wide",
-  "Weather/soil are 0.5\u00b0\u00d70.625\u00b0 POWER cells: all 1 km cells in a POWER cell share the source value (labelled, not resampled)"
+ "remaining": [
+  "No valid negatives yet: no per-cell VIIRS observation-quality (cloud/clear-land fire mask) is ingested, so every no-hotspot day is 'insufficient observation'. Next step: VNP14IMG fire-mask granules via NASA Earthdata.",
+  "Pilot windows only (30 × 30 km); not the full regions.",
+  "Algeria: fire-event sample too sparse for reliable independent training/evaluation.",
+  "NASA POWER cells (~55 × 70 km) are shared by all 1 km cells inside them.",
+  "Land cover is one 10 m pixel at each cell centre."
  ],
  "split": {
   "method": "time-based, no random split",
