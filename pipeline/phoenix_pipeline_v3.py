@@ -120,7 +120,7 @@ def stage_report(_=None):
         ps = j["positive_samples"]; cc = j["country_code"]
         rows.append({
             "window_id": wid, "country": j["country"], "country_code": cc, "zone": meta["zone"], "setting": meta["setting"],
-            "admin1": j["admin1"] if d != OUT else WINDOWS[wid]["admin1"], "admin2_units": list(j["admin2"]["units"].keys()),
+            "admin1": j["admin1"] if d != OUT else json.load(open(f"{OUT}/window_{wid}.json"))["admin1"], "admin2_units": list(j["admin2"]["units"].keys()),
             "historical_period": j["date_range"], "geographic_coverage": f"pilot 30x30 km ({j.get('pilot_area_km2', 900)} km², 900 cells), bbox {[round(x, 3) for x in j['bbox']]}",
             "firms_raw_detections": ps["raw_detections"], "medium_high_confidence_detections": ps["qualifying_detections_in_window"],
             "positive_square_days": ps["positive_square_days"], "distinct_fire_dates": ps["positive_dates"], "grid_cells_ever_detected": ps["positive_grid_cells"],
