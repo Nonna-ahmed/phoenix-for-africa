@@ -223,7 +223,7 @@ def audit(T, ev, W, C, L, wid, N=600):
         for k in (1, 7, 30):  # brute-force recount from raw processed detections (min_periods: only where window fully inside series)
             v = getattr(r, f"fires_previous_{k}d")
             if not pd.isna(v) and v != ((e.date < r.date) & (e.date >= r.date - pd.Timedelta(days=k))).sum(): m["fire_history"] += 1
-        if not pd.isna(r.fires_previous_1d) and r.fires_previous_1d > 0 and r.fire_count > 0 and r.fires_previous_1d == r.fire_count and not ((e.date == r.date - pd.Timedelta(days=1)).sum() == r.fires_previous_1d): m["same_day_target"] += 1
+        if r.fire_count != (e.date == r.date).sum(): m["same_day_target"] += 1  # target recounted from raw; history windows above exclude D
         if not pd.isna(r.t2m_max):
             if r.weather_observation_date > r.date - lag: m["weather_lag"] += 1
             obs = Wi.loc[(r.power_lat, r.power_lon)]
