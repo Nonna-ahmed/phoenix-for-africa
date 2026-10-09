@@ -278,7 +278,9 @@ def stage_report(_=None):
     for wid in WINDOWS:
         p = f"{OUT}/training_features_daily_{wid}.parquet"
         if not os.path.exists(p): rows.append({"window_id": wid, "status": "not built"}); continue
-        Tb = pd.read_parquet(p); frames.append(Tb); a = json.load(open(f"{OUT}/audits_{wid}.json"))
+        RC = ["grid_id", "date", "country", "admin1", "season", "month", "fire_count", "satellite_fire_observation_status", "satellite_observation_valid", "observation_coverage_fraction", "intersecting_pixel_count", "valid_pixel_area_count", "cloud_obscured_pixel_area_count", "invalid_pixel_area_count"]
+        Tb = pd.read_parquet(p, columns=RC); Tb["country"] = Tb.country.astype("category"); Tb["admin1"] = Tb.admin1.astype("category"); Tb["satellite_fire_observation_status"] = Tb.satellite_fire_observation_status.astype("category")
+        frames.append(Tb[["country", "admin1", "season", "month", "satellite_fire_observation_status"]]); a = json.load(open(f"{OUT}/audits_{wid}.json"))
         st = Tb.satellite_fire_observation_status.value_counts(); n = len(Tb); g = lambda k: int(st.get(k, 0))
         conf = Tb[Tb.satellite_fire_observation_status == "NO_FIRE_CONFIRMED"]; fire = Tb[Tb.satellite_fire_observation_status == "FIRE_DETECTED"]
         cov = Tb.observation_coverage_fraction
@@ -309,8 +311,17 @@ def stage_report(_=None):
         r = rows[-1]; r["readiness"] = readiness(r["FIRE_DETECTED"], r["NO_FIRE_CONFIRMED"], r["no_fire_confirmed_months"])
         mx, mn = by_m.valid_obs_pct.max(), by_m.valid_obs_pct.min()
         r["seasonal_bias_flag"] = f"valid-observation rate ranges {mn}% (month {int(by_m.valid_obs_pct.idxmin())}) to {mx}% (month {int(by_m.valid_obs_pct.idxmax())})" + (" — STRONG seasonal bias" if mx - mn > 30 else "")
-    C = pd.concat(frames, ignore_index=True)
-    C.to_parquet(f"{OUT}/v4_combined_candidate_dataset.parquet", index=False)
+    import pyarrow.parquet as pq, pyarrow as pa
+    wr = None
+    for wid in WINDOWS:
+        pf = pq.ParquetFile(f"{OUT}/training_features_daily_{wid}.parquet")
+        for b in pf.iter_batches(batch_size=200_000):
+            tb = pa.Table.from_batches([b])
+            if wr is None: sch = tb.schema; wr = pq.ParquetWriter(f"{OUT}/v4_combined_candidate_dataset.parquet", sch)
+            wr.write_table(tb.cast(sch))
+    wr.close()
+    C = pd.concat(frames, ignore_index=True); C["country"] = C.country.astype(str); C["admin1"] = C.admin1.astype(str); C["satellite_fire_observation_status"] = C.satellite_fire_observation_status.astype(str)
+
     def stats(D):
         s = D.satellite_fire_observation_status.value_counts().to_dict(); f, nf = s.get("FIRE_DETECTED", 0), s.get("NO_FIRE_CONFIRMED", 0)
         return {"rows": len(D), **{k: int(s.get(k, 0)) for k in ("FIRE_DETECTED", "NO_FIRE_CONFIRMED", "INSUFFICIENT_OBSERVATION", "MISSING")},
