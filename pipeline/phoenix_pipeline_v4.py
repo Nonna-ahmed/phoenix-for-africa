@@ -33,8 +33,9 @@ import numpy as np, pandas as pd, requests
 
 BASE = os.environ.get("PHX_BASE", "/mnt/documents/phoenix_pipeline")
 V3 = f"{BASE}/v3_africa_expansion"; V2 = f"{BASE}/v2_blocker_resolution"
-OUT = f"{BASE}/v4_satellite_observation"; RAW = f"{OUT}/raw_vnp14a1_subsets"
-TMP = os.environ.get("PHX_TMP", "/tmp/phx_v4"); PROC_VERSION = "phoenix_v4.0"
+OUT = f"{BASE}/v4_satellite_observation"; TMP = os.environ.get("PHX_TMP", "/tmp/phx_v4")
+RAW = f"{TMP}/subsets"  # per-granule window subsets (working cache); packed per window into OUT/raw_vnp14a1_{wid}.npz
+PROC_VERSION = "phoenix_v4.0"
 for d in (OUT, RAW, TMP): os.makedirs(d, exist_ok=True)
 START, END = dt.date(2020, 1, 1), dt.date(2026, 9, 30); FIRMS_SP_END = dt.date(2026, 6, 30)
 R = 6371007.181; T = 1111950.5197665233; PX = T / 1200; X0 = -20015109.354; Y0 = 10007554.677
@@ -91,8 +92,8 @@ def stage_granules(wid):
 
 
 def _fetch(args):
-    row, tok, need = args
-    p = f"{RAW}/{row['granule']}.npz"
+    row, tok, need, wid = args
+    p = f"{RAW}/{wid}/{row['granule']}.npz"
     if os.path.exists(p): return row["granule"], "cached"
     if not row["url"]: return row["granule"], "no_url"
     tmp = f"{TMP}/{row['granule']}.h5"
@@ -126,7 +127,7 @@ def stage_download(wid):
     for (h, v), d in Wt.groupby(["h", "v"]):
         need[f"h{h:02d}v{v:02d}"] = (int(d.row.min()), int(d.row.max()) + 1, int(d.col.min()), int(d.col.max()) + 1)
     M = M[M.tile.isin(need)]
-    jobs = [(r, tok, need[r["tile"]]) for r in M.to_dict("records")]
+    os.makedirs(f"{RAW}/{wid}", exist_ok=True); jobs = [(r, tok, need[r["tile"]], wid) for r in M.to_dict("records")]
     logp = f"{OUT}/download_log_{wid}.json"; log = json.load(open(logp)) if os.path.exists(logp) else {}
     with ThreadPoolExecutor(8) as ex:
         for i, (gid, st) in enumerate(ex.map(_fetch, jobs)):
@@ -134,6 +135,26 @@ def stage_download(wid):
             if i % 500 == 0: json.dump(log, open(logp, "w")); print(wid, i, "/", len(jobs), flush=True)
     json.dump(log, open(logp, "w"))
     print(wid, pd.Series(log).str.split(":").str[0].value_counts().to_dict())
+
+
+def stage_pack(wid):
+    """Pack all per-granule subsets of a window into one raw file in OUT (smallest authoritative raw representation)."""
+    M = pd.read_csv(f"{OUT}/granule_manifest_{wid}.csv"); log = json.load(open(f"{OUT}/download_log_{wid}.json"))
+    old = f"{OUT}/raw_vnp14a1_subsets/{wid}"; arrs = {}
+    for r in M.itertuples():
+        if log.get(r.granule) not in ("ok", "cached"): continue
+        p = f"{RAW}/{wid}/{r.granule}.npz"
+        if not os.path.exists(p) and os.path.exists(f"{old}/{r.granule}.npz"): p = f"{old}/{r.granule}.npz"
+        z = np.load(p); arrs[r.granule] = (z["fire_mask"], int(z["r0"]), int(z["c0"]))
+    keys = sorted(arrs); tiles = sorted({k.split(".")[2] for k in keys})
+    out = {"granules": np.array(keys)}
+    for t in tiles:
+        ks = [k for k in keys if k.split(".")[2] == t]
+        out[f"fire_mask_{t}"] = np.stack([arrs[k][0] for k in ks]); out[f"granules_{t}"] = np.array(ks)
+        out[f"r0_{t}"] = arrs[ks[0]][1]; out[f"c0_{t}"] = arrs[ks[0]][2]
+    np.savez_compressed(f"{TMP}/raw_{wid}.npz", **out)
+    import shutil; shutil.copy(f"{TMP}/raw_{wid}.npz", f"{OUT}/raw_vnp14a1_{wid}.npz")
+    print(wid, "packed", len(keys), {t: out[f"fire_mask_{t}"].shape for t in tiles}, flush=True)
 
 
 def stage_build(wid):
@@ -147,14 +168,16 @@ def stage_build(wid):
     Wt["tile"] = [f"h{h:02d}v{v:02d}" for h, v in zip(Wt.h, Wt.v)]
     have_tile = {t: np.zeros(len(dates), bool) for t in tiles}
     acc = {k: np.zeros((len(dates), nC)) for k in frac}
+    pk = f"{TMP}/raw_{wid}.npz"
+    Z = np.load(pk if os.path.exists(pk) else f"{OUT}/raw_vnp14a1_{wid}.npz")
     for t in tiles:
-        wt = Wt[Wt.tile == t]
-        for r in M[M.tile == t].itertuples():
-            if log.get(r.granule) not in ("ok", "cached") or r.date not in didx: continue
-            z = np.load(f"{RAW}/{r.granule}.npz"); fm = z["fire_mask"]; r0, c0 = int(z["r0"]), int(z["c0"])
-            v = fm[wt.row.values - r0, wt.col.values - c0]; i = didx[r.date]; have_tile[t][i] = True
-            for k, cl in (("observed", OBSERVED), ("cloud", CLOUD), ("invalid", INVALID), ("fire_any", [7, 8, 9]), ("fire_nh", [8, 9])):
-                np.add.at(acc[k][i], wt.cell.values, wt.w.values * np.isin(v, cl))
+        wt = Wt[Wt.tile == t]; cube = Z[f"fire_mask_{t}"]; r0, c0 = int(Z[f"r0_{t}"]), int(Z[f"c0_{t}"])
+        di = np.array([didx.get(str(dt.datetime.strptime(k.split(".")[1][1:], "%Y%j").date()), -1) for k in Z[f"granules_{t}"]])
+        V = cube[:, wt.row.values - r0, wt.col.values - c0]
+        keep = di >= 0; V, di = V[keep], di[keep]; have_tile[t][di] = True
+        A = np.zeros((len(wt), nC)); A[np.arange(len(wt)), wt.cell.values] = wt.w.values
+        for k, cl in (("observed", OBSERVED), ("cloud", CLOUD), ("invalid", INVALID), ("fire_any", [7, 8, 9]), ("fire_nh", [8, 9])):
+            acc[k][di] += np.isin(V, cl).astype(float) @ A
     # a cell/day is complete only if every tile it touches has a granule that day
     cell_tiles = Wt.groupby("cell").tile.agg(lambda s: sorted(set(s)))
     complete = np.ones((len(dates), nC), bool)
