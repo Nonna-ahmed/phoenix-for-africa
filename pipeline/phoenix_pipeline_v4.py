@@ -33,8 +33,9 @@ import numpy as np, pandas as pd, requests
 
 BASE = os.environ.get("PHX_BASE", "/mnt/documents/phoenix_pipeline")
 V3 = f"{BASE}/v3_africa_expansion"; V2 = f"{BASE}/v2_blocker_resolution"
-OUT = f"{BASE}/v4_satellite_observation"; RAW = f"{OUT}/raw_vnp14a1_subsets"
-TMP = os.environ.get("PHX_TMP", "/tmp/phx_v4"); PROC_VERSION = "phoenix_v4.0"
+OUT = f"{BASE}/v4_satellite_observation"; TMP = os.environ.get("PHX_TMP", "/tmp/phx_v4")
+RAW = f"{TMP}/subsets"  # per-granule window subsets (working cache); packed per window into OUT/raw_vnp14a1_{wid}.npz
+PROC_VERSION = "phoenix_v4.0"
 for d in (OUT, RAW, TMP): os.makedirs(d, exist_ok=True)
 START, END = dt.date(2020, 1, 1), dt.date(2026, 9, 30); FIRMS_SP_END = dt.date(2026, 6, 30)
 R = 6371007.181; T = 1111950.5197665233; PX = T / 1200; X0 = -20015109.354; Y0 = 10007554.677
@@ -91,8 +92,8 @@ def stage_granules(wid):
 
 
 def _fetch(args):
-    row, tok, need = args
-    p = f"{RAW}/{row['granule']}.npz"
+    row, tok, need, wid = args
+    p = f"{RAW}/{wid}/{row['granule']}.npz"
     if os.path.exists(p): return row["granule"], "cached"
     if not row["url"]: return row["granule"], "no_url"
     tmp = f"{TMP}/{row['granule']}.h5"
@@ -126,7 +127,7 @@ def stage_download(wid):
     for (h, v), d in Wt.groupby(["h", "v"]):
         need[f"h{h:02d}v{v:02d}"] = (int(d.row.min()), int(d.row.max()) + 1, int(d.col.min()), int(d.col.max()) + 1)
     M = M[M.tile.isin(need)]
-    jobs = [(r, tok, need[r["tile"]]) for r in M.to_dict("records")]
+    os.makedirs(f"{RAW}/{wid}", exist_ok=True); jobs = [(r, tok, need[r["tile"]], wid) for r in M.to_dict("records")]
     logp = f"{OUT}/download_log_{wid}.json"; log = json.load(open(logp)) if os.path.exists(logp) else {}
     with ThreadPoolExecutor(8) as ex:
         for i, (gid, st) in enumerate(ex.map(_fetch, jobs)):
@@ -134,6 +135,26 @@ def stage_download(wid):
             if i % 500 == 0: json.dump(log, open(logp, "w")); print(wid, i, "/", len(jobs), flush=True)
     json.dump(log, open(logp, "w"))
     print(wid, pd.Series(log).str.split(":").str[0].value_counts().to_dict())
+
+
+def stage_pack(wid):
+    """Pack all per-granule subsets of a window into one raw file in OUT (smallest authoritative raw representation)."""
+    M = pd.read_csv(f"{OUT}/granule_manifest_{wid}.csv"); log = json.load(open(f"{OUT}/download_log_{wid}.json"))
+    old = f"{OUT}/raw_vnp14a1_subsets/{wid}"; arrs = {}
+    for r in M.itertuples():
+        if log.get(r.granule) not in ("ok", "cached"): continue
+        p = f"{RAW}/{wid}/{r.granule}.npz"
+        if not os.path.exists(p) and os.path.exists(f"{old}/{r.granule}.npz"): p = f"{old}/{r.granule}.npz"
+        z = np.load(p); arrs[r.granule] = (z["fire_mask"], int(z["r0"]), int(z["c0"]))
+    keys = sorted(arrs); tiles = sorted({k.split(".")[2] for k in keys})
+    out = {"granules": np.array(keys)}
+    for t in tiles:
+        ks = [k for k in keys if k.split(".")[2] == t]
+        out[f"fire_mask_{t}"] = np.stack([arrs[k][0] for k in ks]); out[f"granules_{t}"] = np.array(ks)
+        out[f"r0_{t}"] = arrs[ks[0]][1]; out[f"c0_{t}"] = arrs[ks[0]][2]
+    np.savez_compressed(f"{TMP}/raw_{wid}.npz", **out)
+    import shutil; shutil.copy(f"{TMP}/raw_{wid}.npz", f"{OUT}/raw_vnp14a1_{wid}.npz")
+    print(wid, "packed", len(keys), {t: out[f"fire_mask_{t}"].shape for t in tiles}, flush=True)
 
 
 def stage_build(wid):
@@ -147,14 +168,16 @@ def stage_build(wid):
     Wt["tile"] = [f"h{h:02d}v{v:02d}" for h, v in zip(Wt.h, Wt.v)]
     have_tile = {t: np.zeros(len(dates), bool) for t in tiles}
     acc = {k: np.zeros((len(dates), nC)) for k in frac}
+    pk = f"{TMP}/raw_{wid}.npz"
+    Z = np.load(pk if os.path.exists(pk) else f"{OUT}/raw_vnp14a1_{wid}.npz")
     for t in tiles:
-        wt = Wt[Wt.tile == t]
-        for r in M[M.tile == t].itertuples():
-            if log.get(r.granule) not in ("ok", "cached") or r.date not in didx: continue
-            z = np.load(f"{RAW}/{r.granule}.npz"); fm = z["fire_mask"]; r0, c0 = int(z["r0"]), int(z["c0"])
-            v = fm[wt.row.values - r0, wt.col.values - c0]; i = didx[r.date]; have_tile[t][i] = True
-            for k, cl in (("observed", OBSERVED), ("cloud", CLOUD), ("invalid", INVALID), ("fire_any", [7, 8, 9]), ("fire_nh", [8, 9])):
-                np.add.at(acc[k][i], wt.cell.values, wt.w.values * np.isin(v, cl))
+        wt = Wt[Wt.tile == t]; cube = Z[f"fire_mask_{t}"]; r0, c0 = int(Z[f"r0_{t}"]), int(Z[f"c0_{t}"])
+        di = np.array([didx.get(str(dt.datetime.strptime(k.split(".")[1][1:], "%Y%j").date()), -1) for k in Z[f"granules_{t}"]])
+        V = cube[:, wt.row.values - r0, wt.col.values - c0]
+        keep = di >= 0; V, di = V[keep], di[keep]; have_tile[t][di] = True
+        A = np.zeros((len(wt), nC)); A[np.arange(len(wt)), wt.cell.values] = wt.w.values
+        for k, cl in (("observed", OBSERVED), ("cloud", CLOUD), ("invalid", INVALID), ("fire_any", [7, 8, 9]), ("fire_nh", [8, 9])):
+            acc[k][di] += np.isin(V, cl).astype(float) @ A
     # a cell/day is complete only if every tile it touches has a granule that day
     cell_tiles = Wt.groupby("cell").tile.agg(lambda s: sorted(set(s)))
     complete = np.ones((len(dates), nC), bool)
@@ -255,7 +278,9 @@ def stage_report(_=None):
     for wid in WINDOWS:
         p = f"{OUT}/training_features_daily_{wid}.parquet"
         if not os.path.exists(p): rows.append({"window_id": wid, "status": "not built"}); continue
-        Tb = pd.read_parquet(p); frames.append(Tb); a = json.load(open(f"{OUT}/audits_{wid}.json"))
+        RC = ["grid_id", "date", "country", "admin1", "season", "month", "fire_count", "satellite_fire_observation_status", "satellite_observation_valid", "observation_coverage_fraction", "intersecting_pixel_count", "valid_pixel_area_count", "cloud_obscured_pixel_area_count", "invalid_pixel_area_count"]
+        Tb = pd.read_parquet(p, columns=RC); Tb["country"] = Tb.country.astype("category"); Tb["admin1"] = Tb.admin1.astype("category"); Tb["satellite_fire_observation_status"] = Tb.satellite_fire_observation_status.astype("category")
+        frames.append(Tb[["country", "admin1", "season", "month", "satellite_fire_observation_status"]]); a = json.load(open(f"{OUT}/audits_{wid}.json"))
         st = Tb.satellite_fire_observation_status.value_counts(); n = len(Tb); g = lambda k: int(st.get(k, 0))
         conf = Tb[Tb.satellite_fire_observation_status == "NO_FIRE_CONFIRMED"]; fire = Tb[Tb.satellite_fire_observation_status == "FIRE_DETECTED"]
         cov = Tb.observation_coverage_fraction
@@ -286,8 +311,17 @@ def stage_report(_=None):
         r = rows[-1]; r["readiness"] = readiness(r["FIRE_DETECTED"], r["NO_FIRE_CONFIRMED"], r["no_fire_confirmed_months"])
         mx, mn = by_m.valid_obs_pct.max(), by_m.valid_obs_pct.min()
         r["seasonal_bias_flag"] = f"valid-observation rate ranges {mn}% (month {int(by_m.valid_obs_pct.idxmin())}) to {mx}% (month {int(by_m.valid_obs_pct.idxmax())})" + (" — STRONG seasonal bias" if mx - mn > 30 else "")
-    C = pd.concat(frames, ignore_index=True)
-    C.to_parquet(f"{OUT}/v4_combined_candidate_dataset.parquet", index=False)
+    import pyarrow.parquet as pq, pyarrow as pa
+    wr = None
+    for wid in WINDOWS:
+        pf = pq.ParquetFile(f"{OUT}/training_features_daily_{wid}.parquet")
+        for b in pf.iter_batches(batch_size=200_000):
+            tb = pa.Table.from_batches([b])
+            if wr is None: sch = tb.schema; wr = pq.ParquetWriter(f"{OUT}/v4_combined_candidate_dataset.parquet", sch)
+            wr.write_table(tb.cast(sch))
+    wr.close()
+    C = pd.concat(frames, ignore_index=True); C["country"] = C.country.astype(str); C["admin1"] = C.admin1.astype(str); C["satellite_fire_observation_status"] = C.satellite_fire_observation_status.astype(str)
+
     def stats(D):
         s = D.satellite_fire_observation_status.value_counts().to_dict(); f, nf = s.get("FIRE_DETECTED", 0), s.get("NO_FIRE_CONFIRMED", 0)
         return {"rows": len(D), **{k: int(s.get(k, 0)) for k in ("FIRE_DETECTED", "NO_FIRE_CONFIRMED", "INSUFFICIENT_OBSERVATION", "MISSING")},
