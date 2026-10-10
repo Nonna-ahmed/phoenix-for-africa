@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np, pandas as pd, requests
 
 CACHE = os.environ.get("PHX_CACHE", "/tmp/phx_cache")
-OUT = os.environ.get("PHX_OUT", "/mnt/documents/phoenix_pipeline/v1_pilot")
+OUT = os.environ.get("PHX_OUT", os.path.join(os.environ.get("PHX_BASE", "./data/phoenix_pipeline"), "v1_pilot"))
 START, END = dt.date(2020, 1, 1), dt.date(2026, 9, 30)
 SP_END = dt.date(2026, 6, 30)  # FIRMS standard-processing archive end at time of build (checked via data_availability)
 CELL_DEG = 0.009  # ~1 km in latitude
