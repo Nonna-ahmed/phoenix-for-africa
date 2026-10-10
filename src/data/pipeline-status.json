@@ -395,5 +395,98 @@
     "leakage_ok": true
    }
   ]
+ },
+ "v4": {
+  "generated": "2026-10-10",
+  "rule": "satellite_observation_valid = 100% of the 1 km cell area falls on VNP14A1 pixels whose daily FireMask is 3/5/7/8/9 (area fractions from 10x10 sub-point sampling).",
+  "readiness_rule": "READY FOR DATASET = >=1000 FIRE_DETECTED and >=50,000 NO_FIRE_CONFIRMED cell-days, with confirmed negatives in >=10 of 12 calendar months (seasonal coverage); LIMITED = some confirmed negatives but below that; NOT READY = none.",
+  "combined": {
+   "rows": 13311000,
+   "FIRE_DETECTED": 23205,
+   "NO_FIRE_CONFIRMED": 10874879,
+   "INSUFFICIENT_OBSERVATION": 2112345,
+   "MISSING": 300571,
+   "positive_rate_among_observable": 0.00213
+  },
+  "countries": [
+   {
+    "country": "Mozambique",
+    "admin1": "Zambézia",
+    "FIRE_DETECTED": 7408,
+    "NO_FIRE_CONFIRMED": 1960462,
+    "INSUFFICIENT_OBSERVATION": 198435,
+    "MISSING": 52195,
+    "pct_no_fire_confirmed": 88.37,
+    "readiness": "READY FOR DATASET",
+    "seasonal_bias_flag": "valid-observation rate ranges 71.04% (month 1) to 98.31% (month 9)",
+    "leakage_ok": true,
+    "consistency_ok": true
+   },
+   {
+    "country": "Democratic Republic of the Congo",
+    "admin1": "Haut-Katanga",
+    "FIRE_DETECTED": 6351,
+    "NO_FIRE_CONFIRMED": 1730640,
+    "INSUFFICIENT_OBSERVATION": 433813,
+    "MISSING": 47696,
+    "pct_no_fire_confirmed": 78.01,
+    "readiness": "READY FOR DATASET",
+    "seasonal_bias_flag": "valid-observation rate ranges 50.11% (month 1) to 97.26% (month 5) — STRONG seasonal bias",
+    "leakage_ok": true,
+    "consistency_ok": true
+   },
+   {
+    "country": "Angola",
+    "admin1": "Moxico",
+    "FIRE_DETECTED": 4609,
+    "NO_FIRE_CONFIRMED": 1644121,
+    "INSUFFICIENT_OBSERVATION": 521189,
+    "MISSING": 48581,
+    "pct_no_fire_confirmed": 74.11,
+    "readiness": "READY FOR DATASET",
+    "seasonal_bias_flag": "valid-observation rate ranges 50.0% (month 1) to 97.62% (month 6) — STRONG seasonal bias",
+    "leakage_ok": true,
+    "consistency_ok": true
+   },
+   {
+    "country": "Zambia",
+    "admin1": "Central",
+    "FIRE_DETECTED": 2271,
+    "NO_FIRE_CONFIRMED": 1810011,
+    "INSUFFICIENT_OBSERVATION": 358518,
+    "MISSING": 47700,
+    "pct_no_fire_confirmed": 81.59,
+    "readiness": "READY FOR DATASET",
+    "seasonal_bias_flag": "valid-observation rate ranges 52.15% (month 1) to 97.2% (month 5) — STRONG seasonal bias",
+    "leakage_ok": true,
+    "consistency_ok": true
+   },
+   {
+    "country": "Nigeria",
+    "admin1": "Niger",
+    "FIRE_DETECTED": 1494,
+    "NO_FIRE_CONFIRMED": 1752145,
+    "INSUFFICIENT_OBSERVATION": 409962,
+    "MISSING": 54899,
+    "pct_no_fire_confirmed": 78.98,
+    "readiness": "READY FOR DATASET",
+    "seasonal_bias_flag": "valid-observation rate ranges 53.2% (month 8) to 99.35% (month 12) — STRONG seasonal bias",
+    "leakage_ok": true,
+    "consistency_ok": true
+   },
+   {
+    "country": "South Africa",
+    "admin1": "Mpumalanga",
+    "FIRE_DETECTED": 1072,
+    "NO_FIRE_CONFIRMED": 1977500,
+    "INSUFFICIENT_OBSERVATION": 190428,
+    "MISSING": 49500,
+    "pct_no_fire_confirmed": 89.14,
+    "readiness": "READY FOR DATASET",
+    "seasonal_bias_flag": "valid-observation rate ranges 77.45% (month 12) to 98.08% (month 5)",
+    "leakage_ok": true,
+    "consistency_ok": true
+   }
+  ]
  }
 }

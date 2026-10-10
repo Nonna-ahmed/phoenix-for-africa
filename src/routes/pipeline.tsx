@@ -45,6 +45,20 @@ function PipelinePage() {
           </Section>
         ))}
       </div>
+      <Section title="v4 satellite observation — confirmed fire vs confirmed no-fire (six pilot areas)">
+        <p className="mb-3 text-sm text-muted-foreground">A day without a hotspot only counts as "no fire" when NASA's daily VIIRS fire mask (VNP14A1) shows the whole 1 km square clearly observed. No model trained. {status.v4.readiness_rule}</p>
+        <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead><tr className="text-left text-xs uppercase text-muted-foreground"><th className="py-1">Country / region</th><th className="text-right">Fire</th><th className="text-right">Confirmed no-fire</th><th className="text-right">Not enough view</th><th className="text-right">Missing</th><th>Checks</th><th>Readiness</th></tr></thead>
+          <tbody>{status.v4.countries.map((c) => (
+            <tr key={c.country} className="border-t border-border/50">
+              <td className="py-1">{c.country}<div className="text-xs text-muted-foreground">{c.admin1} · {c.seasonal_bias_flag}</div></td>
+              <td className="text-right font-mono">{c.FIRE_DETECTED.toLocaleString()}</td><td className="text-right font-mono">{c.NO_FIRE_CONFIRMED.toLocaleString()} ({c.pct_no_fire_confirmed}%)</td>
+              <td className="text-right font-mono">{c.INSUFFICIENT_OBSERVATION.toLocaleString()}</td><td className="text-right font-mono">{c.MISSING.toLocaleString()}</td>
+              <td>{c.leakage_ok && c.consistency_ok ? "PASS" : "FAIL"}</td><td>{c.readiness}</td>
+            </tr>))}</tbody>
+        </table></div>
+        <p className="mt-2 text-xs text-muted-foreground">Combined: {status.v4.combined.rows.toLocaleString()} square-days · fire {status.v4.combined.FIRE_DETECTED.toLocaleString()} · confirmed no-fire {status.v4.combined.NO_FIRE_CONFIRMED.toLocaleString()} · fire rate among observed {(status.v4.combined.positive_rate_among_observable * 100).toFixed(3)}%. Confirmed no-fire days come mostly from the dry season.</p>
+      </Section>
       <Section title="v3 Africa expansion — country assessment (pilot areas, 30 × 30 km each)">
         <p className="mb-3 text-sm text-muted-foreground">Historical training data availability only. "Live app" shows whether PHOENIX's live map modules cover the country — a separate question. No country has confirmed "no fire" days yet. {status.v3.density_rule}</p>
         <div className="overflow-x-auto"><table className="w-full text-sm">
