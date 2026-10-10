@@ -15,7 +15,7 @@ Usage:
 import json, os, sys, math, datetime as dt
 import numpy as np, pandas as pd
 
-BASE = os.environ.get("PHX_BASE", "/mnt/documents/phoenix_pipeline")
+BASE = os.environ.get("PHX_BASE", "./data/phoenix_pipeline")
 OUT = f"{BASE}/v3_africa_expansion"; CACHE = os.environ.get("PHX_CACHE", "/tmp/phx_cache")
 os.makedirs(OUT, exist_ok=True); os.makedirs(CACHE, exist_ok=True)
 os.environ["PHX_OUT"] = OUT; os.environ["PHX_BASE"] = BASE
