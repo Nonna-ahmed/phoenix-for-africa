@@ -18,7 +18,7 @@ function Models() {
       <Section title="Model registry">
         <div className="space-y-4">{MODELS.map((m) => (
           <div key={m.id} className="rounded-sm border bg-background/40 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-semibold">{m.coverage}</h3><span className="label-mono text-risk-low">{m.status}</span></div>
+            <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-semibold">{m.coverage}</h3><span className={`label-mono ${m.status === "legacy" ? "text-risk-medium" : "text-risk-low"}`}>{m.status === "legacy" ? "legacy — retraining planned" : m.status}</span></div>
             <dl className="mt-2 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <div><dt className="label-mono">Model</dt><dd>{m.type} {m.version}</dd></div>
               <div><dt className="label-mono">Training period</dt><dd>{m.trainingPeriod}</dd></div>
