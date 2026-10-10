@@ -15,7 +15,8 @@ Target observability rule (from the FireMask class semantics, no tuned threshold
   satellite_observation_valid = observation_coverage_fraction == 1.0 (every part of the cell observed; any cloud or
   invalid part could hide a fire). Graded fractions are kept.
   FIRE_DETECTED       = v3 FIRMS qualifying detection (nominal/high) in cell/day (definition unchanged)
-  NO_FIRE_CONFIRMED   = no FIRMS detection AND satellite_observation_valid
+  NO_FIRE_CONFIRMED   = no FIRMS detection AND satellite_observation_valid AND no VNP14A1 fire-class pixel (any confidence) touches the cell
+                        (a fire pixel overlapping the cell without a FIRMS point inside it is ambiguous -> INSUFFICIENT_OBSERVATION)
   INSUFFICIENT_OBSERVATION = no FIRMS detection AND granule present AND not fully observed
   MISSING             = VNP14A1 granule for the cell's tile/date not available or failed to process
 VNP14A1 values are used ONLY to label target observability; they are never predictors.
@@ -202,12 +203,12 @@ def stage_build(wid):
     Tb = Tb.merge(O, on=["grid_id", "date"], how="left")
     fire = Tb.fire_count > 0
     Tb["satellite_fire_observation_status"] = np.select(
-        [fire, Tb.observation_coverage_fraction.isna(), Tb.satellite_observation_valid.fillna(False).astype(bool)],
+        [fire, Tb.observation_coverage_fraction.isna(), Tb.satellite_observation_valid.fillna(False).astype(bool) & (Tb.vnp14a1_fire_fraction_any_conf == 0)],
         ["FIRE_DETECTED", "MISSING", "NO_FIRE_CONFIRMED"], "INSUFFICIENT_OBSERVATION")
     Tb["satellite_fire_occurrence"] = Tb.satellite_fire_observation_status.map({"FIRE_DETECTED": 1.0, "NO_FIRE_CONFIRMED": 0.0})
     Tb["firms_product_status"] = np.where(Tb.date.dt.date <= FIRMS_SP_END, "VIIRS_SNPP_SP (standard processing, final)", "VIIRS_SNPP_NRT (near-real-time, not finalized)")
     Tb["observation_source"] = f"{PRODUCT['short_name']}.{PRODUCT['version']} FireMask (LP DAAC), {PROC_VERSION}"
-    Tb["observation_rule"] = "valid iff 100% of cell area observed (FireMask 3/5/7/8/9); cloud=4; invalid=0/1/2/6"
+    Tb["observation_rule"] = "valid iff 100% of cell area observed (FireMask 3/5/7/8/9); cloud=4; invalid=0/1/2/6; no-fire needs no FireMask fire pixel touching the cell"
     Tb["season"] = Tb.season; Tb["window_id"] = wid
     checks = consistency(Tb, src, wid); leak = leakage(Tb, src, wid)
     Tb.to_parquet(f"{OUT}/training_features_daily_{wid}.parquet", index=False)
