@@ -32,7 +32,7 @@ import json, os, sys, math, time, io, datetime as dt, hashlib
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np, pandas as pd, requests
 
-BASE = os.environ.get("PHX_BASE", "/mnt/documents/phoenix_pipeline")
+BASE = os.environ.get("PHX_BASE", "./data/phoenix_pipeline")
 V3 = f"{BASE}/v3_africa_expansion"; V2 = f"{BASE}/v2_blocker_resolution"
 OUT = f"{BASE}/v4_satellite_observation"; TMP = os.environ.get("PHX_TMP", "/tmp/phx_v4")
 RAW = f"{TMP}/subsets"  # per-granule window subsets (working cache); packed per window into OUT/raw_vnp14a1_{wid}.npz
