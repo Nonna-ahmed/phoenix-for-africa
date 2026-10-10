@@ -42,13 +42,14 @@ export const MODELS: ModelInfo[] = [
   {
     id: "dz-north-xgb-v1", coverage: "Northern Algeria", type: "XGBoost", version: "v1", trainingPeriod: "2020–2024",
     features: ["LAT", "LON", "DOY", "T2M_MAX", "T2M_MIN", "RH2M", "WS2M", "PRECTOTCORR"],
-    rocAuc: 0.933, prAuc: 0.548, bbox: [4.5, 36.0, 8.5, 37.2], status: "validated", lastUpdate: "Data unavailable",
+    rocAuc: 0.933, prAuc: 0.548, bbox: [4.5, 36.0, 8.5, 37.2], status: "legacy", lastUpdate: "Data unavailable",
+    notes: "Legacy: trained before the v4 satellite-observation labels (confirmed no-fire days) existed. Retraining is planned (see roadmap.md, Phase 1). See docs/model-cards/dz-north-xgb-v1.md.",
   },
   {
     id: "cd-katanga-xgb-v1", coverage: "DRC / Katanga (Haut-Katanga, Lualaba, Tanganyika)", type: "PHOENIX DRC model (served by backend)", version: "—",
     trainingPeriod: "phoenix_climate_2020_2026.csv", features: ["LAT", "LON", "DOY", "T2M_MAX", "T2M_MIN", "RH2M", "WS2M", "PRECTOTCORR"],
-    status: "validated", lastUpdate: "Data unavailable",
-    notes: "Climate dataset: ~406,224 records, ~2,418 dates, 167 NASA POWER locations. Values of -999 are treated as missing. Shelters: drc_katanga_shelters_final.csv.",
+    status: "legacy", lastUpdate: "Data unavailable",
+    notes: "Legacy: trained before the v4 satellite-observation labels (confirmed no-fire days) existed; retraining is planned (see roadmap.md, Phase 1). Climate dataset: ~406,224 records, ~2,418 dates, 167 NASA POWER locations. Values of -999 are treated as missing. Shelters: drc_katanga_shelters_final.csv. See docs/model-cards/cd-katanga-xgb-v1.md.",
   },
 ];
 
