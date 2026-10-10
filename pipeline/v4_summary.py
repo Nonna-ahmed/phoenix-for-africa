@@ -1,6 +1,6 @@
 """Writes phoenix_pipeline/v4_satellite_observation/v4_summary.md from v4_final_report.json (no new computation)."""
-import json
-D = "/mnt/documents/phoenix_pipeline/v4_satellite_observation"
+import json, os
+D = os.path.join(os.environ.get("PHX_BASE", "./data/phoenix_pipeline"), "v4_satellite_observation")
 r = json.load(open(f"{D}/v4_final_report.json")); C = r["countries"]; A, O = r["combined_all_rows"], r["combined_observable_rows_only"]
 f = lambda n: f"{n:,}"
 L = ["# PHOENIX v4 — satellite observation validity (data only, no model trained)", "",
