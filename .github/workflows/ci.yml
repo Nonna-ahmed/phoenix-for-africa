@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web:
+    name: Web (typecheck, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Test
+        run: bun run test
+      - name: Build
+        run: bun run build
+      # Lint is informational for now: the codebase has ~1,280 Prettier formatting
+      # errors plus 3 react-hooks/rules-of-hooks errors (see roadmap.md, Phase 0).
+      # Remove `continue-on-error` once they are fixed.
+      - name: Lint (non-blocking)
+        run: bun run lint
+        continue-on-error: true
+
+  pipeline:
+    name: Pipeline (syntax check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m compileall -q pipeline
