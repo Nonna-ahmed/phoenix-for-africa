@@ -1,0 +1,7 @@
+# Offline data pipeline (v1-v4). Python 3.11+ recommended.
+numpy
+pandas
+requests
+pyarrow
+shapely
+h5py
