@@ -95,7 +95,7 @@ export interface ModelInfo {
   rocAuc?: number;
   prAuc?: number;
   bbox?: [number, number, number, number];
-  status: "validated" | "in-development";
+  status: "validated" | "in-development" | "legacy";
   lastUpdate: string;
   notes?: string;
 }
