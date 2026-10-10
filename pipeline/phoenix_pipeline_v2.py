@@ -24,7 +24,7 @@ import json, os, sys, math, datetime as dt
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np, pandas as pd, requests
 
-BASE = os.environ.get("PHX_BASE", "/mnt/documents/phoenix_pipeline")
+BASE = os.environ.get("PHX_BASE", "./data/phoenix_pipeline")
 V1, OUT = f"{BASE}/v1_pilot", f"{BASE}/v2_blocker_resolution"
 CACHE = os.environ.get("PHX_CACHE", "/tmp/phx_cache")
 os.makedirs(OUT, exist_ok=True); os.makedirs(CACHE, exist_ok=True)
