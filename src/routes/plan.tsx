@@ -96,7 +96,7 @@ function PlanPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Preparedness" title="AI Preparedness Planner">Move the map to the area you're planning for, press “Use this map area”, then ask a question. An optional AI service (off by default) answers using only the weather, soil moisture, population, land-cover and terrain data PHOENIX retrieves for that area. This is decision support, not a wildfire-risk prediction.</PageHeader>
-      <p className="mb-4 rounded-sm border border-yellow-600/50 bg-yellow-900/20 p-3 text-sm" data-testid="ai-off">AI features are switched off in this build. Nothing you enter is sent to any AI service. To enable them you must set your own AI provider key on a server; until then this page cannot generate text.</p>
+      <p className="mb-4 rounded-sm border border-yellow-600/50 bg-yellow-900/20 p-3 text-sm" data-testid="ai-off">AI features are switched off in this build. Nothing you enter is sent to any AI service. No AI provider code is included, and a leftover API key does not turn them on.</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="label-mono flex flex-col gap-1">Jump to country
           <select className={sel} value={country} onChange={(e) => { setCountry(e.target.value); setRegion(COUNTRIES.find((c) => c.code === e.target.value)?.regions[0]?.id ?? ""); }}>

@@ -1,6 +1,7 @@
 import { getSafeLocations } from "@/lib/locations.functions";
 import { getPowerDaily } from "@/lib/power.functions";
-import { getFirmsHotspots, filterHotspots, type FirmsResult } from "@/lib/firms.functions";
+import { getFirmsHotspots } from "@/lib/firms.functions";
+import { loadStaticHotspots } from "../staticHotspots";
 import { getSiteContext } from "@/lib/site.functions";
 import { useQuery } from "@tanstack/react-query";
 import { apiBaseUrl } from "./client";
@@ -47,22 +48,7 @@ export function useRegionSummary(country: string, region: { id: string; bbox?: [
 
 /** NASA FIRMS hotspots via our server function (MAP_KEY stays server-side). */
 export function useHotspots(bbox: [number, number, number, number] | undefined, days = 1, enabled = true) {
-  return useQuery({ ...opts, staleTime: 15 * 60_000, queryKey: ["firms", bbox, days], enabled, queryFn: async (): Promise<FirmsResult> => {
-    // Prefer the small static file written by the daily job (free Workers have a 10 ms CPU limit); fall back to the server function.
-    if (bbox && bbox[0] >= 24.8 && bbox[1] >= -13.0 && bbox[2] <= 29.0 && bbox[3] <= -8.2 + 1e-9) {
-      try {
-        const r = await fetch("/data/hotspots-haut-katanga.json");
-        if (r.ok) {
-          const j = await r.json();
-          if (j?.status === "ok" && Date.now() - Date.parse(j.fetchedAt) < 36 * 3600_000) {
-            const hotspots = filterHotspots(j.hotspots, bbox, days);
-            return { ...j, hotspots, total: hotspots.length };
-          }
-        }
-      } catch { /* fall through */ }
-    }
-    return getFirmsHotspots({ data: { bbox, days } });
-  } });
+  return useQuery({ ...opts, staleTime: 15 * 60_000, queryKey: ["firms", bbox, days], enabled, queryFn: () => import.meta.env.VITE_API_BASE_URL ? getFirmsHotspots({ data: { bbox, days } }) : loadStaticHotspots(bbox, days) });
 }
 
 /** NASA POWER daily weather for a point (server fn, no key needed). */

@@ -1,10 +1,5 @@
-import { createOpenAI } from "@ai-sdk/openai";
-import { streamText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader } from "./ai/run-id.server";
 
-const MODEL = "openai/gpt-6-astra";
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 
 const nn = z.number().nullable();
 const stat = z.object({ label: z.string(), unit: z.string(), min: nn, mean: nn, max: nn, cells: z.number(), cellsWithValues: z.number(), date: z.string().nullable() }).nullable();
@@ -101,45 +96,9 @@ export async function handlePlan(request: Request): Promise<Response> {
   return streamAi(request, PLAN_INSTRUCTIONS, `Planner's question: ${question}\n\nPHOENIX data for the selected area (JSON):\n${JSON.stringify(data)}`);
 }
 
-async function streamAi(request: Request, instructions: string, prompt: string): Promise<Response> {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) return Response.json({ error: "AI is not configured for this app." }, { status: 500 });
-
-  const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
-  const provider = createOpenAI({
-    baseURL: GATEWAY, apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    fetch: runIdFetch.fetch,
-  });
-  const result = streamText({
-    model: provider.responses(MODEL),
-    instructions,
-    messages: [{ role: "user", content: prompt }],
-    abortSignal: request.signal,
-    providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", include: ["reasoning.encrypted_content"] } },
-  });
-  // Plain-text stream; a failure is appended as a single marker line the page turns into an error message.
-  const enc = new TextEncoder();
-  const body = new ReadableStream<Uint8Array>({
-    async start(c) {
-      try {
-        for await (const part of result.fullStream) {
-          if (part.type === "text-delta") c.enqueue(enc.encode(part.text));
-          else if (part.type === "error") throw part.error;
-        }
-      } catch (err) {
-        const e = err as { statusCode?: number; message?: string; name?: string };
-        if (e?.name !== "AbortError") {
-          const status = e?.statusCode ?? 500;
-          console.error("brief AI error", status, e?.message);
-          const msg = status === 402 ? "AI credits are used up. Add credits in Settings → Plans & credits, then try again."
-            : status === 429 ? "The AI service is busy. Please wait a minute and try again."
-            : status === 403 ? "AI access is blocked for this workspace (limit or policy). A workspace admin can review it."
-            : "The AI answer could not be generated. Please try again later.";
-          c.enqueue(enc.encode(`\n[[PHOENIX_ERROR:${msg}]]`));
-        }
-      } finally { c.close(); }
-    },
-  });
-  return withLovableAiGatewayRunIdHeader(new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }), runIdFetch);
+/** AI is intentionally disabled: no provider is wired, so nothing can be sent to an external AI service,
+ * whatever environment variables are set. Adding a provider is a deliberate code change. */
+export const AI_DISABLED_MESSAGE = "AI features are switched off in this build.";
+export function streamAi(_request: Request, _instructions: string, _prompt: string): Promise<Response> {
+  return Promise.resolve(Response.json({ error: AI_DISABLED_MESSAGE }, { status: 501 }));
 }

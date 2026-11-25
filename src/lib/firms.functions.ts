@@ -67,8 +67,8 @@ export const getFirmsHotspots = createServerFn({ method: "GET" })
   .handler(async ({ data }): Promise<FirmsResult> => {
     const fetchedAt = new Date().toISOString();
     const key = process.env["FIRMS_MAP_KEY"];
-    const url = KEYLESS_URLS[data.source];
-    if (!key && (!url || !data.bbox)) return { status: "not_configured", message: "Satellite fire data not connected (keyless fallback needs a regional bbox and a NOAA-20/21 source)", hotspots: [], total: 0, truncated: false, fetchedAt };
+    const url = process.env["ENABLE_KEYLESS_SERVER_CSV"] === "1" ? KEYLESS_URLS[data.source] : undefined;
+    if (!key && (!url || !data.bbox)) return { status: "not_configured", message: "Satellite fire data not connected (no MAP_KEY; the keyless CSV path is off by default because of free-plan CPU limits)", hotspots: [], total: 0, truncated: false, fetchedAt };
     const bbox = data.bbox ?? AFRICA;
     const ck = `${data.source}|${bbox.join(",")}|${data.days}`;
     const hit = cache.get(ck);
