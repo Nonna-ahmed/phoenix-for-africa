@@ -25,7 +25,13 @@ describe("static hotspots", () => {
     file("2026-11-25T06:00:00Z", [h({})]);
     expect((await loadStaticHotspots([10, 30, 20, 40], 1, now)).status).toBe("not_configured");
     const r = await loadStaticHotspots([12.2, -13.5, 31.3, 5.4], 1, now);
-    expect(r.status).toBe("ok"); expect(r.message).toMatch(/Partial coverage/);
+    expect(r.status).toBe("ok"); expect(r.caveats?.join(" ")).toMatch(/Spatial coverage: only about 5\d%/);
+  });
+  it("more days than the file holds adds a time caveat", async () => {
+    file("2026-11-25T06:00:00Z", [h({})]);
+    const r = await loadStaticHotspots(PILOT_BBOX, 5, now);
+    expect(r.caveats?.join(" ")).toMatch(/last 2 UTC days, but 5 were requested/); expect(r.daysCovered).toBe(2);
+    expect((await loadStaticHotspots(PILOT_BBOX, 1, now)).caveats).toEqual([]);
   });
   it("unsupported bbox makes no fetch and no heavy fallback", async () => {
     const f = vi.fn(); vi.stubGlobal("fetch", f);

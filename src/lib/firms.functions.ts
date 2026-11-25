@@ -14,6 +14,10 @@ export interface FirmsResult {
   total: number;
   truncated: boolean;
   fetchedAt: string;
+  /** Visible coverage limits (spatial/temporal). Missing coverage is unknown, never zero. */
+  caveats?: string[];
+  areaCoveragePct?: number;
+  daysCovered?: number;
 }
 
 const SOURCES = ["VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT", "MODIS_NRT"] as const;

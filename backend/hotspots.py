@@ -23,7 +23,7 @@ def main(out='public/data/hotspots-southern-africa.json'):
             except (KeyError, ValueError): frp = None
             hs.append({'lat': round(lat, 4), 'lon': round(lon, 4), 'acqDate': r['acq_date'], 'acqTime': f'{t[:2]}:{t[2:]}', 'satellite': r.get('satellite'), 'instrument': 'VIIRS', 'source': src, 'confidence': r['confidence'], 'frp': frp, 'daynight': r.get('daynight')})
     if not hs and len(URLS): pass
-    doc = {'status': 'ok', 'message': 'Static file from public NASA NOAA-20/21 VIIRS 7-day CSVs (nominal/high confidence), written by the daily job', 'coverage_WSEN': list(COVER), 'hotspots': hs, 'total': len(hs), 'truncated': False, 'fetchedAt': dt.datetime.now(dt.timezone.utc).isoformat()}
+    doc = {'status': 'ok', 'message': 'Static file from public NASA NOAA-20/21 VIIRS 7-day CSVs (nominal/high confidence), written by the daily job', 'coverage_WSEN': list(COVER), 'days_covered': DAYS, 'hotspots': hs, 'total': len(hs), 'truncated': False, 'fetchedAt': dt.datetime.now(dt.timezone.utc).isoformat()}
     os.makedirs(os.path.dirname(out), exist_ok=True); json.dump(doc, open(out, 'w'), separators=(',', ':'))
     print('wrote', out, len(hs))
 if __name__ == '__main__': main(*sys.argv[1:])

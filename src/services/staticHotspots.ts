@@ -24,7 +24,13 @@ export async function loadStaticHotspots(bbox: [number, number, number, number] 
     if (age > HOTSPOTS_MAX_AGE_H * 3600_000) return empty("error", "Hotspot file is stale (older than 36 h), not shown as current");
     if (!bboxOverlaps(bbox, j.coverage_WSEN)) return empty("not_configured", "This area is outside the free regional NASA file (Southern Africa)");
     const hotspots = filterHotspots(j.hotspots, bbox, days, now);
-    const partial = bbox[3] > j.coverage_WSEN[3] || bbox[1] < j.coverage_WSEN[1] || bbox[0] < j.coverage_WSEN[0] || bbox[2] > j.coverage_WSEN[2];
-    return { ...j, message: partial ? "Partial coverage: the free NASA regional file covers Southern Africa only; the northern part of this area is not covered. " + (j.message ?? "") : j.message, hotspots, total: hotspots.length, truncated: false };
+    const cov = j.coverage_WSEN as number[];
+    const ix = Math.max(0, Math.min(bbox[2], cov[2]!) - Math.max(bbox[0], cov[0]!)), iy = Math.max(0, Math.min(bbox[3], cov[3]!) - Math.max(bbox[1], cov[1]!));
+    const areaPct = Math.round((100 * ix * iy) / Math.max(1e-9, (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])));
+    const fileDays = typeof j.days_covered === "number" ? j.days_covered : 2;
+    const caveats: string[] = [];
+    if (areaPct < 99) caveats.push(`Spatial coverage: only about ${areaPct}% of this area is inside the free regional NASA file (Southern Africa). Hotspots outside it are not included; that does not mean there were none.`);
+    if (days > fileDays) caveats.push(`Time coverage: this file holds only the last ${fileDays} UTC days, but ${days} were requested. Older detections are not included; that does not mean there were none.`);
+    return { ...j, hotspots, total: hotspots.length, truncated: false, caveats, areaCoveragePct: areaPct, daysCovered: Math.min(days, fileDays) };
   } catch { return empty("error", "Hotspot file could not be loaded"); }
 }

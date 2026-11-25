@@ -103,6 +103,7 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
         if (fires.isError || !d || d.status === "error") return st("error", "Data temporarily unavailable");
         if (d.status === "not_configured") return st("unavailable", "Data unavailable — NASA FIRMS key missing");
         if (d.total === 0) return st("empty", "No hotspots in this period");
+        if (d.caveats?.length) return st("partial", `${d.total.toLocaleString()} hotspots · PARTIAL coverage${d.areaCoveragePct !== undefined && d.areaCoveragePct < 99 ? ` (~${d.areaCoveragePct}% of area)` : ""}${(d.daysCovered ?? 0) < days ? `, ${d.daysCovered} of ${days} days` : ""}; absent ≠ none`);
         return st(d.truncated ? "partial" : "ok", d.truncated ? `${d.hotspots.length.toLocaleString()} strongest of ${d.total.toLocaleString()} shown` : `${d.total.toLocaleString()} hotspots`);
       }
       case "risk": return backendStatus("risk", "model points", (c) => !!getCountry(c)?.regions.some((r) => r.modelId));
