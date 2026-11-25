@@ -4,6 +4,7 @@ import { getFirmsHotspots } from "@/lib/firms.functions";
 import { getSiteContext } from "@/lib/site.functions";
 import { useQuery } from "@tanstack/react-query";
 import { apiBaseUrl } from "./client";
+import { loadStaticRisk, staticCovers } from "../staticRisk";
 import { getAlerts, getFireReports, getFwi, getRiskMap, getShelters, type AreaQuery } from "./endpoints";
 
 const opts = { retry: 1, staleTime: 5 * 60_000, refetchOnWindowFocus: false } as const;
@@ -12,7 +13,9 @@ const opts = { retry: 1, staleTime: 5 * 60_000, refetchOnWindowFocus: false } as
 export const CONNECTED = ["DZ", "CD"];
 
 export function useRiskMap(a: AreaQuery | null) {
-  return useQuery({ ...opts, queryKey: ["risk-map", a], enabled: !!a && !!apiBaseUrl(), queryFn: ({ signal }) => getRiskMap(a!, signal) });
+  // A real backend wins. Without one, the experimental static pilot file covers Haut-Katanga only.
+  const useStatic = !apiBaseUrl() && staticCovers(a);
+  return useQuery({ ...opts, queryKey: ["risk-map", a, useStatic ? "static" : "api"], enabled: !!a && (!!apiBaseUrl() || useStatic), queryFn: ({ signal }) => (useStatic ? loadStaticRisk(signal) : getRiskMap(a!, signal)) });
 }
 export function useShelters(a: AreaQuery | null) {
   return useQuery({ ...opts, queryKey: ["shelters", a], enabled: !!a && !!apiBaseUrl(), queryFn: ({ signal }) => getShelters(a!, signal) });

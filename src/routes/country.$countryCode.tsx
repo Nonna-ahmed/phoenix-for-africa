@@ -25,7 +25,7 @@ function CountryPage() {
   if (!c) return <Empty>Country not supported.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? "Real data coverage via the PHOENIX backend." : "Coverage: Coming Soon"}</PageHeader>
+      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? (c.code === "CD" ? "Experimental pilot: risk is shown for the Haut-Katanga area only." : "Prediction backend not connected.") : "Coverage: Coming Soon"}</PageHeader>
       <Section title="Data availability"><DataStatusGrid status={c.status} /></Section>
       <Section title="Country map"><RiskMap countryCode={c.code} height={420} /></Section>
       <Section title={`${c.regionLabel}s`}>

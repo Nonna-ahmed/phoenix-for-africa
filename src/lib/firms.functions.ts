@@ -23,7 +23,7 @@ const AFRICA: [number, number, number, number] = [-20, -36, 55, 38];
 const input = z.object({
   bbox: z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90), z.number().min(-180).max(180), z.number().min(-90).max(90)]).optional(),
   days: z.number().int().min(1).max(5).default(1),
-  source: z.enum(SOURCES).default("VIIRS_SNPP_NRT"),
+  source: z.enum(SOURCES).default("VIIRS_NOAA20_NRT"),
 });
 
 // Per-isolate cache: FIRMS NRT updates roughly every few hours.

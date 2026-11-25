@@ -20,7 +20,7 @@ export interface LayerDef {
 export const LAYERS: LayerDef[] = [
   { id: "fires", icon: "🔥", label: "NASA FIRMS Fire Detections", datasetIds: ["firms"], defaultOn: true,
     legend: [{ color: "--fire", label: "Satellite hotspot — not a confirmed fire", shape: "ring" }] },
-  { id: "risk", icon: "🧠", label: "PHOENIX AI Wildfire Risk", datasetIds: ["phoenix-models"], defaultOn: true,
+  { id: "risk", icon: "🧠", label: "PHOENIX AI Wildfire Risk (experimental pilot)", datasetIds: ["phoenix-models"], defaultOn: true,
     legend: [{ color: "--risk-high", label: "AI risk HIGH ≥ 0.65", shape: "dot" }, { color: "--risk-medium", label: "AI risk MEDIUM 0.35–0.65", shape: "dot" }, { color: "--risk-low", label: "AI risk LOW < 0.35", shape: "dot" }] },
   { id: "weather", icon: "🌦️", label: "NASA POWER Weather", datasetIds: ["power"], defaultOn: false,
     legend: [{ color: "--layer-weather", label: "Weather reading (region point)", shape: "square" }] },

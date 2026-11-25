@@ -1,0 +1,81 @@
+import os
+import numpy as np, pandas as pd, json, lightgbm as lgb
+from sklearn.metrics import average_precision_score, roc_auc_score, brier_score_loss
+from sklearn.isotonic import IsotonicRegression
+z=np.load('data/arrays.npz'); A=(z['A']>0).astype(np.float32); days=pd.to_datetime(z['days']); T,nI,nJ=A.shape
+wa,wl=z['wa'],z['wl']; W0,S0,STEP=24.8,-13.0,0.25
+# map cell -> weather point (nearest)
+clon=W0+STEP*(np.arange(nI)+.5); clat=S0+STEP*(np.arange(nJ)+.5)
+wi=np.abs(clon[:,None]-wl[None,:]).argmin(1); wj=np.abs(clat[:,None]-wa[None,:]).argmin(1)
+def wx(v): return z[v][:,wj[None,:].repeat(nI,0).T if False else 0,0] if False else np.stack([[z[v][:,wj[j],wi[i]] for j in range(nJ)] for i in range(nI)],axis=0).transpose(2,0,1)  # T,nI,nJ
+tmax,tmin,pr,ws,rh=[wx(v) for v in ['T2M_MAX','T2M_MIN','PRECTOTCORR','WS2M','RH2M']]
+import sys; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
+from features import build_features, BASE as BASEF, WL
+F=build_features(A,tmax,tmin,pr,ws,rh,days.dayofyear.values)
+II,JJ=np.meshgrid(np.arange(nI),np.arange(nJ),indexing='ij')
+F['lat']=np.broadcast_to(clat[JJ][None],A.shape); F['lon']=np.broadcast_to(clon[II][None],A.shape)
+# block id: 4x4-cell (1 deg) blocks
+block=(II//4)*10+(JJ//4)
+rng=np.random.RandomState(7); ub=np.unique(block); held=set(rng.choice(ub,size=len(ub)//4,replace=False).tolist())
+isheld=np.isin(block,list(held))
+print('blocks',len(ub),'held-out blocks',len(held),'held-out cells',int(isheld.sum()),'of',nI*nJ)
+valid=np.arange(T)>=95   # after 90-day warm-up with lag
+dates=days
+def split(a,b): return np.where((dates>=a)&(dates<=b)&valid)[0]
+tr=split('2020-01-01','2023-12-31'); va=split('2024-01-01','2024-12-31'); te=split('2025-01-01','2025-12-31')
+base_old=['doy_sin','doy_cos','tmax','tmin','wind','rh','rain7','rain30','rain90','tmax7','rh7','days_since_rain','fire1','fire3','fire7','nb_fire7','days_since_fire']
+base=BASEF
+def mat(idx,feats,cellmask=None):
+    m=np.ones((nI,nJ),bool) if cellmask is None else cellmask
+    X=np.stack([F[k][idx][:,m] for k in feats],-1).reshape(-1,len(feats)); y=A[idx][:,m].reshape(-1); return X,y
+def evalset(y,p,name):
+    r={'n':int(len(y)),'pos_rate':round(float(y.mean()),4),'pr_auc':round(float(average_precision_score(y,p)),4),'roc_auc':round(float(roc_auc_score(y,p)),4),'brier':round(float(brier_score_loss(y,np.clip(p,0,1))),4)}
+    k=int(len(y)*0.1); o=np.argsort(-p)[:k]; r['recall_top10pct']=round(float(y[o].sum()/y.sum()),4); r['precision_top10pct']=round(float(y[o].mean()),4)
+    return r
+res={}
+def fit(feats,trmask,label):
+    Xtr,ytr=mat(tr,feats,trmask); Xva,yva=mat(va,feats,trmask)
+    m=lgb.LGBMClassifier(n_estimators=600,learning_rate=0.05,num_leaves=31,min_child_samples=200,subsample=0.8,subsample_freq=1,colsample_bytree=0.8,verbose=-1,random_state=1)
+    m.fit(Xtr,ytr,eval_set=[(Xva,yva)],eval_metric='average_precision',callbacks=[lgb.early_stopping(40,verbose=False)])
+    return m
+notheld=~isheld
+out={}
+for name,feats in [('no_coords',base),('with_coords',base+['lat','lon'])]:
+    m=fit(feats,notheld,name)
+    # calibration on 2024 (non-held cells only)
+    Xva,yva=mat(va,feats,notheld); iso=IsotonicRegression(out_of_bounds='clip').fit(m.predict_proba(Xva)[:,1],yva)
+    for scope,mask in [('seen_areas_2025',notheld),('held_out_areas_2025',isheld)]:
+        X,y=mat(te,feats,mask); p=m.predict_proba(X)[:,1]
+        out[f'{name}|{scope}']=evalset(y,p,name); out[f'{name}|{scope}|calibrated']=evalset(y,iso.predict(p),name)
+        out[f'{name}|{scope}']['best_iter']=int(m.best_iteration_ or 0)
+    if name=='no_coords':
+        best=(m,iso,feats)
+        imp=dict(sorted(zip(feats,[int(v) for v in m.booster_.feature_importance('gain')]),key=lambda x:-x[1])); out['importance_gain']=imp
+# baselines (2025)
+for scope,mask in [('seen_areas_2025',notheld),('held_out_areas_2025',isheld)]:
+    X,y=mat(te,['fire7'],mask); out[f'persistence_fire7|{scope}']=evalset(y,X[:,0]+1e-3*np.random.RandomState(0).rand(len(y)),'p')
+    X,y=mat(te,['fire1'],mask); out[f'persistence_fire1|{scope}']=evalset(y,X[:,0]+1e-3*np.random.RandomState(0).rand(len(y)),'p')
+    # seasonal climatology: mean detection rate by day-of-year (+-15d window) over 2020-23, all non-held cells
+    doy=dates.dayofyear.values; clim=np.zeros(367)
+    trdoy=doy[tr]; rate=A[tr][:,notheld].mean(1)
+    for d in range(1,367):
+        dd=np.minimum(np.abs(trdoy-d),366-np.abs(trdoy-d)); clim[d]=rate[dd<=15].mean()
+    p=np.repeat(clim[doy[te]],int(mask.sum())); X,y=mat(te,['fire1'],mask); out[f'climatology_doy|{scope}']=evalset(y,p+1e-6*np.random.RandomState(1).rand(len(y)),'c')
+# reliability table (no_coords, held-out, uncalibrated)
+m,iso,feats=best; X,y=mat(te,feats,isheld); p=m.predict_proba(X)[:,1]
+bins=np.linspace(0,1,11); rel=[]
+for a,b in zip(bins[:-1],bins[1:]):
+    s=(p>=a)&(p<b+1e-9 if b==1 else p<b)
+    if s.sum(): rel.append({'bin':f'{a:.1f}-{b:.1f}','n':int(s.sum()),'mean_pred':round(float(p[s].mean()),3),'obs_rate':round(float(y[s].mean()),3)})
+out['reliability_no_coords_held_out']=rel
+# per-month PR-AUC held-out 2025
+mo=np.repeat(dates[te].month.values,int(isheld.sum())); pm={}
+for k in range(1,13):
+    s=mo==k
+    if y[s].sum()>0 and y[s].sum()<s.sum(): pm[k]={'pos_rate':round(float(y[s].mean()),3),'pr_auc':round(float(average_precision_score(y[s],p[s])),3),'roc_auc':round(float(roc_auc_score(y[s],p[s])),3)}
+out['monthly_held_out_2025_no_coords']=pm
+out['footprint']={'bbox_WSEN':[24.8,-13.0,29.0,-8.2],'cell_deg':STEP,'cells':int(nI*nJ),'held_out_cells':int(isheld.sum()),'train':'2020-01-01..2023-12-31','val':'2024','test':'2025','weather_lag_days':WL}
+json.dump(out,open('data/results.json','w'),indent=1)
+m.booster_.save_model(os.path.join(os.path.dirname(os.path.abspath(__file__)),'model.txt'))
+print(json.dumps({k:v for k,v in out.items() if '|' in k},indent=0)[:6000])
+print(out['importance_gain']); print(rel); print(pm)
