@@ -9,18 +9,23 @@ import { AlertCard, Section } from "./ui";
 type Scope = { countryCode?: string | undefined; regionId?: string | undefined; bbox?: [number, number, number, number] | undefined };
 const na = (v: unknown) => (v === null || v === undefined || v === "" ? "Data unavailable" : String(v));
 
+function Caveats({ d }: { d: { caveats?: string[] } }) {
+  return d.caveats?.length ? <div className="mb-2 space-y-1" data-testid="coverage-caveats">{d.caveats.map((c, i) => <Note key={i} tone="muted">{c}</Note>)}</div> : null;
+}
+
 export function DetectionList({ countryCode, regionId }: Scope) {
   const q = useHotspots(scopeBbox(countryCode, regionId), 1);
   const d = q.data;
   return (
-    <Section title="Satellite Hotspots (NASA FIRMS)" right={d?.status === "ok" ? <LiveBadge /> : undefined}>
+    <Section title="Satellite Hotspots (NASA FIRMS)" right={d?.status === "ok" ? <LiveBadge label="NASA public data" /> : undefined}>
       <p className="mb-2 rounded-sm bg-fire/10 p-2 text-xs text-fire">Hotspots are satellite-detected thermal anomalies. They can come from wildfires, agricultural burning, gas flares or hot surfaces — <b>not a confirmed ground fire</b>.</p>
       {q.isLoading ? <p className="text-sm text-muted-foreground">Loading satellite data…</p>
         : q.isError ? <Note tone="error">Unable to retrieve current data. Please try again.</Note>
         : !d || d.status === "not_configured" ? <Note tone="muted">Satellite fire data not connected.</Note>
         : d.status === "error" ? <Note tone="error">{d.message}</Note>
-        : d.hotspots.length === 0 ? <Note tone="muted">No hotspots detected in the last 24 hours for this area.</Note>
+        : d.hotspots.length === 0 ? <><Caveats d={d} /><Note tone="muted">No hotspots found in the covered part of this area{d.caveats?.length ? " (see coverage limits above; not a statement that the rest had none)" : ""}.</Note></>
         : (<>
+          <Caveats d={d} />
           <div className="label-mono mb-2">{d.total.toLocaleString()} hotspots · last 24 h{d.truncated ? ` · showing strongest ${d.hotspots.length.toLocaleString()}` : ""}</div>
           <ul className="max-h-80 space-y-1.5 overflow-y-auto">{[...d.hotspots].sort((a, b) => (b.frp ?? 0) - (a.frp ?? 0)).slice(0, 50).map((h, i) => (
             <li key={i} className="rounded-sm border-l-4 border-dashed border-l-fire bg-background/40 p-2 text-sm">

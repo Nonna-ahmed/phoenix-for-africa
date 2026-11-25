@@ -1,3 +1,6 @@
+import { apiBaseUrl } from "@/services/api/client";
+import { loadStaticRisk } from "@/services/staticRisk";
+import { useQuery } from "@tanstack/react-query";
 import { useRegionSummary } from "@/services/api/hooks";
 import type { Region } from "@/data/types";
 import { createFileRoute, Outlet, useMatchRoute } from "@tanstack/react-router";
@@ -25,9 +28,10 @@ function CountryPage() {
   if (!c) return <Empty>Country not supported.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? "Real data coverage via the PHOENIX backend." : "Coverage: Coming Soon"}</PageHeader>
+      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? (c.code === "CD" ? "Experimental pilot: risk is shown for a rectangular study area (24.8E to 29.0E, 13.0S to 8.2S) around Haut-Katanga. It is not a province boundary and extends into neighbouring areas such as Zambia." : "Prediction backend not connected.") : "Coverage: Coming Soon"}</PageHeader>
       <Section title="Data availability"><DataStatusGrid status={c.status} /></Section>
       <Section title="Country map"><RiskMap countryCode={c.code} height={420} /></Section>
+      {c.code === "CD" && !apiBaseUrl() && <StudyAreaSummary />}
       <Section title={`${c.regionLabel}s`}>
         {c.regions.length === 0 ? <Empty>AI model not available for this country.</Empty> : (
           <ul className="divide-y">{c.regions.map((r) => (
@@ -45,7 +49,24 @@ function CountryPage() {
 function RegionRisk({ code, region }: { code: string; region: Region }) {
   const s = useRegionSummary(code, region);
   if (!region.modelId) return <RiskPill p={null} />;
+  // No backend: the static pilot covers a cross-border rectangle, so no per-province probability is shown.
+  if (!apiBaseUrl()) return <span className="label-mono rounded-sm bg-muted px-2 py-1">No estimate</span>;
   if (s.q.isLoading) return <span className="text-sm text-muted-foreground">Loading…</span>;
   if (s.q.isError) return <span className="text-sm text-destructive">Unavailable</span>;
   return <RiskPill p={s.maxProbability} />;
+}
+
+function StudyAreaSummary() {
+  const q = useQuery({ queryKey: ["static-risk-summary"], queryFn: () => loadStaticRisk(), staleTime: 15 * 60_000, retry: 1 });
+  return (
+    <Section title="Pilot study area (experimental)">
+      {q.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p>
+        : q.isError || !q.data ? <p className="text-sm text-destructive">Risk output unavailable (missing, failed or not for today, UTC). This is not low risk and says nothing about safety.</p>
+        : (() => {
+          const pts = q.data.filter((x) => x.probability !== null);
+          const peak = pts.reduce((m, x) => Math.max(m, x.probability ?? 0), 0);
+          return <p className="text-sm">{pts.length} cells, peak single-cell probability {Math.round(peak * 100)}%. Rectangle 24.8E to 29.0E, 13.0S to 8.2S; it spans several provinces and part of Zambia. No province-level estimates are shown. Low means a lower chance of a satellite detection in the cell, not safety.</p>;
+        })()}
+    </Section>
+  );
 }

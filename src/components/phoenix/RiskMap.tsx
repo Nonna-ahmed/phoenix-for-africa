@@ -75,7 +75,9 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
   const backendStatus = (key: "risk" | "shelters" | "reports", noun: string, needs?: (code: string) => boolean): LayerStatus => {
     const rel = areas.filter((a) => !needs || needs(a.code));
     if (rel.length === 0) return st("unavailable", "Unavailable for this country");
-    if (!backend) return st("unavailable", "Data unavailable — PHOENIX backend not connected");
+    // Without a backend, only the experimental static risk file (Haut-Katanga pilot, DR Congo) is available.
+    if (!backend && key !== "risk") return st("unavailable", "Data unavailable — PHOENIX backend not connected");
+    if (!backend && !rel.some((a) => a.code === "CD")) return st("unavailable", "Experimental risk covers only the Haut-Katanga pilot (DR Congo)");
     const qs = rel.map((a) => a[key]);
     if (qs.some((q) => q.isLoading)) return st("loading", "Loading…");
     const n = qs.reduce((s, q) => s + (q.data?.length ?? 0), 0);
@@ -101,6 +103,7 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
         if (fires.isError || !d || d.status === "error") return st("error", "Data temporarily unavailable");
         if (d.status === "not_configured") return st("unavailable", "Data unavailable — NASA FIRMS key missing");
         if (d.total === 0) return st("empty", "No hotspots in this period");
+        if (d.caveats?.length) return st("partial", `${d.total.toLocaleString()} hotspots · PARTIAL coverage${d.areaCoveragePct !== undefined && d.areaCoveragePct < 99 ? ` (~${d.areaCoveragePct}% of area)` : ""}${(d.daysCovered ?? 0) < days ? `, ${d.daysCovered} of ${days} days` : ""}; absent ≠ none`);
         return st(d.truncated ? "partial" : "ok", d.truncated ? `${d.hotspots.length.toLocaleString()} strongest of ${d.total.toLocaleString()} shown` : `${d.total.toLocaleString()} hotspots`);
       }
       case "risk": return backendStatus("risk", "model points", (c) => !!getCountry(c)?.regions.some((r) => r.modelId));

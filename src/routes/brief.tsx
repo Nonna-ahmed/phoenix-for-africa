@@ -130,7 +130,8 @@ function BriefPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Coordination" title="AI Response Brief">Pick a region and time range. PHOENIX gathers the live data below and Lovable AI turns it into a short decision-support brief. This is not a wildfire-risk prediction. Always verify on the ground — hotspots are not confirmed fires.</PageHeader>
+      <PageHeader eyebrow="Coordination" title="AI Response Brief">Pick a region and time range. PHOENIX gathers the live data below and an optional AI service (off by default) turns it into a short decision-support brief. This is not a wildfire-risk prediction. Always verify on the ground — hotspots are not confirmed fires.</PageHeader>
+      <p className="mb-4 rounded-sm border border-yellow-600/50 bg-yellow-900/20 p-3 text-sm" data-testid="ai-off">AI features are switched off in this build. Nothing you enter is sent to any AI service. No AI provider code is included, and a leftover API key does not turn them on.</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="label-mono flex flex-col gap-1">Country
           <select className={sel} value={country} onChange={(e) => { setCountry(e.target.value); setRegion(regionsOf(e.target.value)[0]?.id ?? ""); setText(""); }}>
@@ -144,7 +145,7 @@ function BriefPage() {
           <select className={sel} value={days} onChange={(e) => { setDays(Number(e.target.value)); setText(""); }}>
             {RANGES.map(([d, l]) => <option key={d} value={d}>{l}</option>)}
           </select></label>
-        <button onClick={generate} disabled={loading || busy} className="rounded-sm bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+        <button onClick={generate} disabled={true || loading || busy} className="rounded-sm bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
           {busy ? "Writing brief…" : loading ? "Gathering data…" : "Generate brief"}
         </button>
         {busy && <button onClick={() => abort.current?.abort()} className="rounded-sm border px-3 py-2 text-sm">Stop</button>}

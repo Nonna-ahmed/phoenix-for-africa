@@ -2,7 +2,7 @@
 
 Wildfire risk, satellite fire detection and emergency-response decision support for Africa.
 
-**Live app:** https://phoenix-for-africa.lovable.app
+**Previous live app (Lovable-hosted):** https://phoenix-for-africa.lovable.app
 
 > **Status: pre-release / pilot.** Real data is connected for Algeria and the DR Congo.
 > Other countries show "Coming Soon". PHOENIX is decision support, **not** an official
@@ -28,7 +28,7 @@ Browser ──► TanStack Start app (this repo, hosted on Lovable)
               ├─ src/services/api   ──► PHOENIX FastAPI backend (VITE_API_BASE_URL)   [not in this repo]
               ├─ src/lib/*.functions.ts  server functions: NASA FIRMS, NASA POWER, OSM,
               │                          MODIS NDVI, land cover / terrain / population
-              └─ src/lib/brief.server.ts  AI brief + planner (Lovable AI Gateway)
+              └─ src/lib/brief.server.ts  AI brief + planner (disabled, returns 501)
 
 pipeline/   offline Python data pipeline (v1–v4) that builds historical training data
 ```
@@ -68,7 +68,6 @@ See `.env.example`.
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | browser | PHOENIX FastAPI backend base URL. Without it, backend-driven pages show "Data unavailable" |
 | `FIRMS_MAP_KEY` | server only | NASA FIRMS hotspots |
-| `LOVABLE_API_KEY` | server only | AI brief and planner |
 | `NASA_EARTHDATA_TOKEN` | server / pipeline | LP DAAC access (needed by pipeline v4) |
 
 Never commit real keys.

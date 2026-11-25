@@ -14,7 +14,7 @@ export function RankingTable() {
         <thead><tr className="label-mono text-left">{["Country", "Region", "Risk (max)", "Fire detections", "Last update"].map((h) => <th key={h} className="py-2 pr-3 font-normal">{h}</th>)}</tr></thead>
         <tbody>{REGIONS.map(({ country, region }) => <Row key={region.id} country={country} region={region} />)}</tbody>
       </table>
-      <p className="label-mono mt-2">Live API · regions with a backend model only</p>
+      <p className="label-mono mt-2">Live API · regions with a backend model only. Risk is the highest single cell, not a region-wide probability.</p>
     </div>
   );
 }

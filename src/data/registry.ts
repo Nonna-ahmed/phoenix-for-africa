@@ -15,12 +15,12 @@ const soon = (code: string, name: string, center: [number, number], bbox: [numbe
 export const COUNTRIES: Country[] = [
   {
     code: "DZ", name: "Algeria", center: [36.6, 6.5], bbox: [-8.7, 19.0, 12.0, 37.2], zoom: 7, coverage: "active", regionLabel: "Wilaya",
-    status: { aiModel: "available", satellite: "available", environmental: "available", shelters: "unavailable", alerts: "limited" },
+    status: { aiModel: "unavailable", satellite: "available", environmental: "unavailable", shelters: "unavailable", alerts: "unavailable" },
     regions: [{ id: "northern-algeria", name: "Northern Algeria", center: [36.6, 6.5], bbox: [4.5, 36.0, 8.5, 37.2], modelId: "dz-north-xgb-v1" }],
   },
   {
     code: "CD", name: "Democratic Republic of Congo", center: [-9.5, 26.5], bbox: [12.2, -13.5, 31.3, 5.4], zoom: 6, coverage: "active", regionLabel: "Province",
-    status: { aiModel: "available", satellite: "available", environmental: "available", shelters: "available", alerts: "limited" },
+    status: { aiModel: "limited", satellite: "available", environmental: "limited", shelters: "unavailable", alerts: "unavailable" },
     regions: [
       { id: "haut-katanga", name: "Haut-Katanga", center: [-10.9, 27.5], modelId: "cd-katanga-xgb-v1" },
       { id: "lualaba", name: "Lualaba", center: [-10.5, 24.5], modelId: "cd-katanga-xgb-v1" },

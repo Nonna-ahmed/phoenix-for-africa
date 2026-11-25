@@ -41,4 +41,5 @@ __pycache__/
 !.env.example
 
 # Local pipeline data
-data/
+/data/
+!public/data/

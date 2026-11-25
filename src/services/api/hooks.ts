@@ -1,9 +1,11 @@
 import { getSafeLocations } from "@/lib/locations.functions";
 import { getPowerDaily } from "@/lib/power.functions";
 import { getFirmsHotspots } from "@/lib/firms.functions";
+import { loadStaticHotspots } from "../staticHotspots";
 import { getSiteContext } from "@/lib/site.functions";
 import { useQuery } from "@tanstack/react-query";
 import { apiBaseUrl } from "./client";
+import { loadStaticRisk, staticCovers } from "../staticRisk";
 import { getAlerts, getFireReports, getFwi, getRiskMap, getShelters, type AreaQuery } from "./endpoints";
 
 const opts = { retry: 1, staleTime: 5 * 60_000, refetchOnWindowFocus: false } as const;
@@ -12,7 +14,9 @@ const opts = { retry: 1, staleTime: 5 * 60_000, refetchOnWindowFocus: false } as
 export const CONNECTED = ["DZ", "CD"];
 
 export function useRiskMap(a: AreaQuery | null) {
-  return useQuery({ ...opts, queryKey: ["risk-map", a], enabled: !!a && !!apiBaseUrl(), queryFn: ({ signal }) => getRiskMap(a!, signal) });
+  // A real backend wins. Without one, the experimental static pilot file covers Haut-Katanga only.
+  const useStatic = !apiBaseUrl() && staticCovers(a);
+  return useQuery({ ...opts, queryKey: ["risk-map", a, useStatic ? "static" : "api"], enabled: !!a && (!!apiBaseUrl() || useStatic), queryFn: ({ signal }) => (useStatic ? loadStaticRisk(signal) : getRiskMap(a!, signal)) });
 }
 export function useShelters(a: AreaQuery | null) {
   return useQuery({ ...opts, queryKey: ["shelters", a], enabled: !!a && !!apiBaseUrl(), queryFn: ({ signal }) => getShelters(a!, signal) });
@@ -44,7 +48,7 @@ export function useRegionSummary(country: string, region: { id: string; bbox?: [
 
 /** NASA FIRMS hotspots via our server function (MAP_KEY stays server-side). */
 export function useHotspots(bbox: [number, number, number, number] | undefined, days = 1, enabled = true) {
-  return useQuery({ ...opts, staleTime: 15 * 60_000, queryKey: ["firms", bbox, days], enabled, queryFn: () => getFirmsHotspots({ data: { bbox, days } }) });
+  return useQuery({ ...opts, staleTime: 15 * 60_000, queryKey: ["firms", bbox, days], enabled, queryFn: () => import.meta.env.VITE_API_BASE_URL ? getFirmsHotspots({ data: { bbox, days } }) : loadStaticHotspots(bbox, days) });
 }
 
 /** NASA POWER daily weather for a point (server fn, no key needed). */

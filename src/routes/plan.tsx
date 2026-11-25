@@ -95,7 +95,8 @@ function PlanPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Preparedness" title="AI Preparedness Planner">Move the map to the area you're planning for, press “Use this map area”, then ask a question. Lovable AI answers using only the weather, soil moisture, population, land-cover and terrain data PHOENIX retrieves for that area. This is decision support, not a wildfire-risk prediction.</PageHeader>
+      <PageHeader eyebrow="Preparedness" title="AI Preparedness Planner">Move the map to the area you're planning for, press “Use this map area”, then ask a question. An optional AI service (off by default) answers using only the weather, soil moisture, population, land-cover and terrain data PHOENIX retrieves for that area. This is decision support, not a wildfire-risk prediction.</PageHeader>
+      <p className="mb-4 rounded-sm border border-yellow-600/50 bg-yellow-900/20 p-3 text-sm" data-testid="ai-off">AI features are switched off in this build. Nothing you enter is sent to any AI service. No AI provider code is included, and a leftover API key does not turn them on.</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="label-mono flex flex-col gap-1">Jump to country
           <select className={sel} value={country} onChange={(e) => { setCountry(e.target.value); setRegion(COUNTRIES.find((c) => c.code === e.target.value)?.regions[0]?.id ?? ""); }}>
@@ -126,7 +127,7 @@ function PlanPage() {
             <textarea value={question} onChange={(e) => setQuestion(e.target.value.slice(0, 600))} rows={3} placeholder="e.g. Where should we pre-position resources?" className="w-full rounded-sm border bg-card p-2 text-sm" />
             <div className="mt-2 flex flex-wrap gap-2">{EXAMPLES.map((q) => <button key={q} onClick={() => setQuestion(q)} className="rounded-sm border px-2 py-1 text-xs text-muted-foreground hover:text-foreground">{q}</button>)}</div>
             <div className="mt-3 flex gap-2">
-              <button onClick={ask} disabled={!area || loading || busy || question.trim().length < 3} className="rounded-sm bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+              <button onClick={ask} disabled={true || !area || loading || busy || question.trim().length < 3} className="rounded-sm bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
                 {busy ? "Thinking…" : loading ? "Gathering data…" : !area ? "Select an area first" : "Get insights"}
               </button>
               {busy && <button onClick={() => abort.current?.abort()} className="rounded-sm border px-3 py-2 text-sm">Stop</button>}
