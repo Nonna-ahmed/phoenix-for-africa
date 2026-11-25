@@ -50,7 +50,7 @@ function RegionRisk({ code, region }: { code: string; region: Region }) {
   const s = useRegionSummary(code, region);
   if (!region.modelId) return <RiskPill p={null} />;
   // No backend: the static pilot covers a cross-border rectangle, so no per-province probability is shown.
-  if (!apiBaseUrl()) return <span className="label-mono rounded-sm bg-muted px-2 py-1">No province estimate (see study area)</span>;
+  if (!apiBaseUrl()) return <span className="label-mono rounded-sm bg-muted px-2 py-1">No estimate</span>;
   if (s.q.isLoading) return <span className="text-sm text-muted-foreground">Loading…</span>;
   if (s.q.isError) return <span className="text-sm text-destructive">Unavailable</span>;
   return <RiskPill p={s.maxProbability} />;
@@ -65,7 +65,7 @@ function StudyAreaSummary() {
         : (() => {
           const pts = q.data.filter((x) => x.probability !== null);
           const peak = pts.reduce((m, x) => Math.max(m, x.probability ?? 0), 0);
-          return <p className="text-sm">{pts.length} cells, peak single-cell probability {Math.round(peak * 100)}%. Rectangle 24.8E to 29.0E, 13.0S to 8.2S; it spans several provinces and part of Zambia. Low means a lower chance of a satellite detection in the cell, not safety.</p>;
+          return <p className="text-sm">{pts.length} cells, peak single-cell probability {Math.round(peak * 100)}%. Rectangle 24.8E to 29.0E, 13.0S to 8.2S; it spans several provinces and part of Zambia. No province-level estimates are shown. Low means a lower chance of a satellite detection in the cell, not safety.</p>;
         })()}
     </Section>
   );
