@@ -28,5 +28,6 @@ export function Note({ tone, children }: { tone: "muted" | "error"; children: Re
 }
 
 export function LiveBadge() {
-  return <span className="label-mono rounded-sm border border-risk-low/40 px-1.5 py-0.5 text-risk-low">Live API</span>;
+  const live = !!apiBaseUrl();
+  return <span className="label-mono rounded-sm border border-risk-low/40 px-1.5 py-0.5 text-risk-low">{live ? "Live API" : "Experimental · static file"}</span>;
 }

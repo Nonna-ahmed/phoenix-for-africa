@@ -40,7 +40,7 @@ function RegionPage() {
               const tone = lvl === "HIGH" ? "text-risk-high" : lvl === "MEDIUM" ? "text-risk-medium" : "text-risk-low";
               return (<>
                 <div className={`font-display text-6xl font-bold ${tone}`}>{Math.round(p * 100)}%</div>
-                <div className={`font-mono text-sm font-bold ${tone}`}>Highest point risk: {lvl}</div>
+                <div className={`font-mono text-sm font-bold ${tone}`}>Highest single-cell risk: {lvl} (not region-wide)</div>
                 <p className="mt-2 text-sm text-muted-foreground">{s.points.length} model points · {model.type} · {s.latestDate ?? "date unavailable"}. Click a point on the map for details.</p>
                 {model.status === "legacy" && <p className="mt-2 text-xs text-muted-foreground">Legacy model (trained before v4 labels): indicative only. Retraining is planned.</p>}
                 <div className="mt-4"><div className="label-mono mb-1">7-day trend</div>

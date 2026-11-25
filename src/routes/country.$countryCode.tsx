@@ -25,7 +25,7 @@ function CountryPage() {
   if (!c) return <Empty>Country not supported.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? (c.code === "CD" ? "Experimental pilot: risk is shown for the Haut-Katanga area only." : "Prediction backend not connected.") : "Coverage: Coming Soon"}</PageHeader>
+      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? (c.code === "CD" ? "Experimental pilot: risk is shown for a rectangular study area (24.8E to 29.0E, 13.0S to 8.2S) around Haut-Katanga. It is not a province boundary and extends into neighbouring areas such as Zambia." : "Prediction backend not connected.") : "Coverage: Coming Soon"}</PageHeader>
       <Section title="Data availability"><DataStatusGrid status={c.status} /></Section>
       <Section title="Country map"><RiskMap countryCode={c.code} height={420} /></Section>
       <Section title={`${c.regionLabel}s`}>
