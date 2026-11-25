@@ -1,56 +1,56 @@
 name: daily-risk
-# Generates the static risk + hotspot files and ships them WITHOUT committing to main (no history growth).
-# Several attempts early in the UTC day: today's file only exists once NASA POWER has published day D-3,
-# so predict.py refuses to write earlier and the next attempt retries. The site marks anything not for
-# today's UTC day as unavailable/stale; it never relabels yesterday's output as today's.
+# Ships static risk + hotspot files by deploying the built site. It does NOT commit data to main (no history growth).
+#  - Risk: attempted hourly 00:30-05:30 UTC. Today's file needs NASA POWER day D-3; predict.py refuses to write
+#    before it is published, and the next attempt retries. A risk file already for today's UTC day is not recomputed.
+#  - Hotspots: refreshed on EVERY run (also every 3 h later in the day), independent of the risk date.
+#  - Every run starts from the live site's current risk file, so a hotspot-only deploy never replaces fresh risk with the
+#    old seed file, and a failed weather fetch keeps the previous output (which the site labels by its own date and shows
+#    as stale/unavailable, never as today's).
 on:
-  schedule: [{ cron: "30 0-5 * * *" }]   # hourly 00:30 to 05:30 UTC; Actions schedules can be delayed
+  schedule:
+    - cron: "30 0-5 * * *"
+    - cron: "15 6-23/3 * * *"
   workflow_dispatch: {}
 permissions: { contents: read }
 concurrency: { group: daily-risk, cancel-in-progress: false }
 jobs:
-  predict:
+  refresh:
     runs-on: ubuntu-latest
     env:
       CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      SITE_URL: ${{ vars.SITE_URL }}   # e.g. https://phoenix.example.workers.dev ; empty = dry run
+      SITE_URL: ${{ vars.SITE_URL }}   # empty = dry run (build + artifact only)
     steps:
       - uses: actions/checkout@v4
-      - name: Already have today's file on the live site?
-        id: have
-        run: |
-          today=$(date -u +%F); have=no
-          if [ -n "$SITE_URL" ]; then
-            d=$(curl -fsS "$SITE_URL/data/risk-haut-katanga.json" | python3 -c "import sys,json;print(json.load(sys.stdin).get('date',''))" || true)
-            echo "live file date: ${d:-none}"; [ "$d" = "$today" ] && have=yes
-          fi
-          echo "have=$have" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
-        if: steps.have.outputs.have != 'yes'
         with: { python-version: "3.11", cache: pip, cache-dependency-path: backend/requirements.txt }
-      - if: steps.have.outputs.have != 'yes'
-        run: pip install -r backend/requirements.txt
-      - name: Predict (refuses to write if weather for D-3 is not published yet)
-        id: pred
-        if: steps.have.outputs.have != 'yes'
+      - run: pip install -r backend/requirements.txt
+      - name: Start from the live risk file (keeps healthy prior output)
+        id: live
         run: |
-          if python backend/predict.py; then echo "ok=yes" >> "$GITHUB_OUTPUT"; else echo "::notice::risk not ready yet (see log); will retry on the next scheduled run"; echo "ok=no" >> "$GITHUB_OUTPUT"; fi
-      - name: Hotspots
-        if: steps.pred.outputs.ok == 'yes'
-        run: python backend/hotspots.py
+          today=$(date -u +%F); live=none
+          if [ -n "$SITE_URL" ] && curl -fsS "$SITE_URL/data/risk-haut-katanga.json" -o /tmp/live-risk.json; then
+            live=$(python3 -c "import json;print(json.load(open('/tmp/live-risk.json')).get('date',''))" 2>/dev/null || echo bad)
+            if [ "$live" != "bad" ] && [ -n "$live" ]; then cp /tmp/live-risk.json public/data/risk-haut-katanga.json; fi
+          fi
+          echo "live risk date: $live (today $today)"
+          if [ "$live" = "$today" ]; then echo "need_risk=no" >> "$GITHUB_OUTPUT"; else echo "need_risk=yes" >> "$GITHUB_OUTPUT"; fi
+      - name: Risk (refuses to write if weather for D-3 is not published yet)
+        if: steps.live.outputs.need_risk == 'yes'
+        run: |
+          if python backend/predict.py; then echo "risk updated"; else echo "::notice::risk not ready yet, previous output kept (labelled with its own date); retry on the next run"; fi
+      - name: Hotspots (always)
+        run: python backend/hotspots.py || echo "::warning::hotspot refresh failed; previous files stay and go stale after 36 h"
+      - run: python backend/manifest.py
       - uses: oven-sh/setup-bun@v2
-        if: steps.pred.outputs.ok == 'yes'
-      - name: Build site with fresh data
-        if: steps.pred.outputs.ok == 'yes'
+      - name: Build site with the current data
         run: bun install --frozen-lockfile && bun run build
       - uses: actions/upload-artifact@v4
-        if: steps.pred.outputs.ok == 'yes'
         with:
           name: site-${{ github.run_id }}
           path: .output/public
           retention-days: 3
-      - name: Deploy to Cloudflare (only when the account secrets exist)
-        if: steps.pred.outputs.ok == 'yes' && env.CF_TOKEN != ''
+      - name: Deploy to Cloudflare (only when the token secret exists)
+        if: env.CF_TOKEN != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
