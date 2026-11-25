@@ -40,3 +40,6 @@ It downloads free NASA data and rewrites `public/data/risk-haut-katanga.json`. R
 
 ## 6. Free hosting
 The site builds for Cloudflare Workers (free plan). The daily GitHub Action in `.github/workflows/daily-risk.yml` refreshes the risk file for free on a public repository.
+
+## Build without Lovable
+vite.config.ts is now a plain Vite config (TanStack Start, React, Tailwind, tsconfig paths, Nitro with the cloudflare-module preset). The @lovable.dev/vite-tanstack-config package is removed from package.json. `bun run dev`, `bun run build`, `bunx tsc --noEmit` and `bun run test` pass. Leftover src/lib/lovable-error-reporting.ts only calls optional browser hooks that do nothing outside the Lovable editor. The AI Brief and Planner code still calls the Lovable AI gateway when LOVABLE_API_KEY is set; with no key they stay off.
