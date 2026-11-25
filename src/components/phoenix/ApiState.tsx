@@ -27,7 +27,9 @@ export function Note({ tone, children }: { tone: "muted" | "error"; children: Re
   return <p className={`rounded-sm border border-dashed p-3 text-sm ${tone === "error" ? "border-destructive/60 text-destructive" : "text-muted-foreground"}`}>{children}</p>;
 }
 
-export function LiveBadge() {
+/** Shows "Live API" only when a backend is configured. Without one it renders nothing, unless an explicit label is given for a real non-backend source. */
+export function LiveBadge({ label }: { label?: string }) {
   const live = !!apiBaseUrl();
-  return <span className="label-mono rounded-sm border border-risk-low/40 px-1.5 py-0.5 text-risk-low">{live ? "Live API" : "Experimental · static file"}</span>;
+  if (!live && !label) return null;
+  return <span className="label-mono rounded-sm border border-risk-low/40 px-1.5 py-0.5 text-risk-low">{live ? "Live API" : label}</span>;
 }

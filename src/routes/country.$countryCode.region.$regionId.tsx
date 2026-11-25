@@ -33,7 +33,7 @@ function RegionPage() {
         <Link to="/country/$countryCode" params={{ countryCode: c.code }} className="text-primary">← {c.name}</Link>
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-3">
-        <Section title="Predicted Wildfire Risk" right={<LiveBadge />}>
+        <Section title="Predicted Wildfire Risk" right={<LiveBadge label="Experimental · static file" />}>
           {!model ? <Empty>AI prediction not currently available for this region.</Empty> : (
             <ApiState q={s.q} isEmpty={() => s.maxProbability === null}>{() => {
               const p = s.maxProbability!; const lvl = riskLevel(p);

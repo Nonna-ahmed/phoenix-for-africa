@@ -14,10 +14,12 @@ export function staticCovers(a: AreaQuery | null | undefined): boolean {
 
 interface StaticCell { lat: number; lon: number; probability: number; risk_level: string; date: string }
 
-export async function loadStaticRisk(signal?: AbortSignal): Promise<RiskPoint[]> {
+export async function loadStaticRisk(signal?: AbortSignal, now: Date = new Date()): Promise<RiskPoint[]> {
   const res = await fetch(STATIC_RISK_URL, { signal: signal ?? null, headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`HTTP ${res.status} on ${STATIC_RISK_URL}`);
-  const doc = (await res.json()) as { cells?: StaticCell[] };
+  const doc = (await res.json()) as { cells?: StaticCell[]; date?: string; generated_utc?: string };
+  // Never show a file that targets another UTC day as current risk: unavailable is not "low".
+  if (isStale({ date: doc.date, generated_utc: doc.generated_utc }, now)) throw new Error("Risk file is not for today (UTC): unavailable, not low risk");
   return (doc.cells ?? [])
     .filter((c) => Number.isFinite(c.lat) && Number.isFinite(c.lon))
     .map((c) => ({ lat: c.lat, lon: c.lon, probability: Number.isFinite(c.probability) ? c.probability : null, level: c.risk_level ?? null, date: c.date ?? null, environment: null }));
@@ -35,10 +37,13 @@ export function ageHours(m: StaticMeta, now: Date = new Date()): number {
   const t = m.generated_utc ? Date.parse(m.generated_utc) : NaN;
   return Number.isFinite(t) ? (now.getTime() - t) / 3.6e6 : Infinity;
 }
-export function isStale(m: StaticMeta, now: Date = new Date()): boolean { return ageHours(m, now) > 36; }
+/** Stale unless the file targets the current UTC day AND was issued within 36 h. */
+export function isStale(m: StaticMeta, now: Date = new Date()): boolean {
+  return m.date !== now.toISOString().slice(0, 10) || ageHours(m, now) > 36;
+}
 export function describeFreshness(m: StaticMeta, now: Date = new Date()): string {
   const h = ageHours(m, now);
   if (!Number.isFinite(h)) return "Risk file: issue time unknown, treat as stale.";
   const base = `Risk for UTC day ${m.date ?? "?"}, issued ${m.generated_utc}.`;
-  return isStale(m, now) ? `${base} STALE: older than 36 h, do not use as current.` : base;
+  return isStale(m, now) ? `${base} STALE: this is not today\'s (UTC) risk, do not use as current.` : base;
 }

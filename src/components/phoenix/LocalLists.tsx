@@ -13,7 +13,7 @@ export function DetectionList({ countryCode, regionId }: Scope) {
   const q = useHotspots(scopeBbox(countryCode, regionId), 1);
   const d = q.data;
   return (
-    <Section title="Satellite Hotspots (NASA FIRMS)" right={d?.status === "ok" ? <LiveBadge /> : undefined}>
+    <Section title="Satellite Hotspots (NASA FIRMS)" right={d?.status === "ok" ? <LiveBadge label="NASA public data" /> : undefined}>
       <p className="mb-2 rounded-sm bg-fire/10 p-2 text-xs text-fire">Hotspots are satellite-detected thermal anomalies. They can come from wildfires, agricultural burning, gas flares or hot surfaces — <b>not a confirmed ground fire</b>.</p>
       {q.isLoading ? <p className="text-sm text-muted-foreground">Loading satellite data…</p>
         : q.isError ? <Note tone="error">Unable to retrieve current data. Please try again.</Note>

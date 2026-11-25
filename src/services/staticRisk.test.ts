@@ -10,13 +10,17 @@ describe("staticRisk", () => {
     expect(staticCovers(null)).toBe(false);
   });
   it("maps cells and drops invalid coordinates", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ cells: [
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ date: "2026-11-25", generated_utc: "2026-11-25T05:00:00Z", cells: [
       { lat: -10, lon: 27, probability: 0.4, risk_level: "medium", date: "2026-11-25" },
       { lat: NaN, lon: 27, probability: 0.4, risk_level: "low", date: "x" },
     ] }) })));
-    const r = await loadStaticRisk();
+    const r = await loadStaticRisk(undefined, new Date("2026-11-25T10:00:00Z"));
     expect(r).toHaveLength(1);
     expect(r[0]!.probability).toBe(0.4);
+  });
+  it("refuses a file for another UTC day", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ date: "2026-11-24", generated_utc: "2026-11-25T01:00:00Z", cells: [] }) })));
+    await expect(loadStaticRisk(undefined, new Date("2026-11-25T10:00:00Z"))).rejects.toThrow(/unavailable/);
   });
   it("throws on HTTP error", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404 })));
@@ -24,7 +28,8 @@ describe("staticRisk", () => {
   });
   it("flags stale and unknown issue times", () => {
     const now = new Date("2026-11-25T12:00:00Z");
-    expect(isStale({ generated_utc: "2026-11-25T05:00:00Z" }, now)).toBe(false);
+    expect(isStale({ date: "2026-11-25", generated_utc: "2026-11-25T05:00:00Z" }, now)).toBe(false);
+    expect(isStale({ date: "2026-11-24", generated_utc: "2026-11-25T05:00:00Z" }, now)).toBe(true);
     expect(isStale({ generated_utc: "2026-11-23T05:00:00Z" }, now)).toBe(true);
     expect(isStale({}, now)).toBe(true);
     expect(describeFreshness({ date: "2026-11-23", generated_utc: "2026-11-23T05:00:00Z" }, now)).toMatch(/STALE/);
