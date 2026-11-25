@@ -1,21 +1,57 @@
 name: daily-risk
+# Generates the static risk + hotspot files and ships them WITHOUT committing to main (no history growth).
+# Several attempts early in the UTC day: today's file only exists once NASA POWER has published day D-3,
+# so predict.py refuses to write earlier and the next attempt retries. The site marks anything not for
+# today's UTC day as unavailable/stale; it never relabels yesterday's output as today's.
 on:
-  schedule: [{ cron: "17 5 * * *" }]
+  schedule: [{ cron: "30 0-5 * * *" }]   # hourly 00:30 to 05:30 UTC; Actions schedules can be delayed
   workflow_dispatch: {}
-permissions: { contents: write }
+permissions: { contents: read }
+concurrency: { group: daily-risk, cancel-in-progress: false }
 jobs:
   predict:
     runs-on: ubuntu-latest
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SITE_URL: ${{ vars.SITE_URL }}   # e.g. https://phoenix.example.workers.dev ; empty = dry run
     steps:
       - uses: actions/checkout@v4
+      - name: Already have today's file on the live site?
+        id: have
+        run: |
+          today=$(date -u +%F); have=no
+          if [ -n "$SITE_URL" ]; then
+            d=$(curl -fsS "$SITE_URL/data/risk-haut-katanga.json" | python3 -c "import sys,json;print(json.load(sys.stdin).get('date',''))" || true)
+            echo "live file date: ${d:-none}"; [ "$d" = "$today" ] && have=yes
+          fi
+          echo "have=$have" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
+        if: steps.have.outputs.have != 'yes'
         with: { python-version: "3.11", cache: pip, cache-dependency-path: backend/requirements.txt }
-      - run: pip install -r backend/requirements.txt
-      - run: python backend/predict.py
-        working-directory: .
-        env: { PYTHONUNBUFFERED: "1" }
-      - run: python backend/hotspots.py
-      - run: |
-          git config user.name "phoenix-bot"; git config user.email "bot@users.noreply.github.com"
-          git add public/data/risk-haut-katanga.json public/data/hotspots-southern-africa.json
-          if ! git diff --cached --quiet; then git commit -m "Daily risk update" && git push; fi
+      - if: steps.have.outputs.have != 'yes'
+        run: pip install -r backend/requirements.txt
+      - name: Predict (refuses to write if weather for D-3 is not published yet)
+        id: pred
+        if: steps.have.outputs.have != 'yes'
+        run: |
+          if python backend/predict.py; then echo "ok=yes" >> "$GITHUB_OUTPUT"; else echo "::notice::risk not ready yet (see log); will retry on the next scheduled run"; echo "ok=no" >> "$GITHUB_OUTPUT"; fi
+      - name: Hotspots
+        if: steps.pred.outputs.ok == 'yes'
+        run: python backend/hotspots.py
+      - uses: oven-sh/setup-bun@v2
+        if: steps.pred.outputs.ok == 'yes'
+      - name: Build site with fresh data
+        if: steps.pred.outputs.ok == 'yes'
+        run: bun install --frozen-lockfile && bun run build
+      - uses: actions/upload-artifact@v4
+        if: steps.pred.outputs.ok == 'yes'
+        with:
+          name: site-${{ github.run_id }}
+          path: .output/public
+          retention-days: 3
+      - name: Deploy to Cloudflare (only when the account secrets exist)
+        if: steps.pred.outputs.ok == 'yes' && env.CF_TOKEN != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy -c .output/server/wrangler.json

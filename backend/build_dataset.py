@@ -1,5 +1,6 @@
 import glob, numpy as np, pandas as pd
-W,S,E,N = 24.8,-13.0,29.0,-8.2; STEP=0.25
+from region import get_region
+_R=get_region(); W,S,E,N,STEP = _R['W'],_R['S'],_R['E'],_R['N'],_R['step']
 # --- fire labels (FIRMS VIIRS S-NPP, nominal/high confidence), per 0.25 deg cell per UTC day
 fr=[]
 for y in range(2020,2026):

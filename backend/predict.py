@@ -6,6 +6,7 @@ import io, json, sys, time, datetime as dt, urllib.request
 import numpy as np, pandas as pd, lightgbm as lgb
 sys.path.insert(0, __file__.rsplit('/', 1)[0] if '/' in __file__ else '.')
 from features import build_features, BASE, W0, S0, STEP, BBOX
+from region import get_region
 
 FIRMS = "https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-20-viirs-c2/{r}/J1_VIIRS_C2_{r}_7d.csv"
 REGIONS = ["Southern_Africa", "Northern_and_Central_Africa"]
@@ -20,7 +21,8 @@ def get(url, tries=4):
         except Exception as e: print('retry', url[:80], e, file=sys.stderr); time.sleep(5 * (k + 1))
     raise RuntimeError('download failed: ' + url)
 
-def main(today=None, out='public/data/risk-haut-katanga.json', model=None):
+def main(today=None, out=None, model=None):
+    out = out or get_region()['output']
     import os
     model = model or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model.txt')
     D = pd.Timestamp(today or dt.datetime.utcnow().date())
@@ -37,7 +39,7 @@ def main(today=None, out='public/data/risk-haut-katanga.json', model=None):
             if d in di:
                 A[di[d], int((row.longitude - W) // STEP), int((row.latitude - S) // STEP)] = 1; seen_dates.add(d.date().isoformat()); n_det += 1
     # --- weather (NASA POWER 0.5 deg grid points)
-    wl = np.arange(25.0, 29.01, 0.5); wa = np.arange(-12.75, -8.2, 0.5)
+    wl = np.arange(np.ceil(W * 2) / 2, E + 0.01, 0.5); wa = np.arange(S + 0.25, N, 0.5)   # 0.5 deg POWER grid points inside the region
     arr = {v: np.full((T, len(wa), len(wl)), np.nan, np.float32) for v in ['T2M_MAX', 'T2M_MIN', 'PRECTOTCORR', 'WS2M', 'RH2M']}
     for j, a in enumerate(wa):
         for i, o in enumerate(wl):

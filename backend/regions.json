@@ -1,0 +1,15 @@
+{
+  "haut-katanga": {
+    "label": "Haut-Katanga pilot (rectangle, not an admin boundary; includes part of Zambia)",
+    "bbox_WSEN": [24.8, -13.0, 29.0, -8.2],
+    "cell_deg": 0.25,
+    "firms_country_archive": "Democratic_Republic_of_the_Congo",
+    "firms_realtime_region": "Southern_Africa",
+    "train_years": [2020, 2021, 2022, 2023],
+    "val_year": 2024,
+    "test_year": 2025,
+    "output": "public/data/risk-haut-katanga.json",
+    "status": "experimental",
+    "validated": false
+  }
+}

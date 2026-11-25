@@ -3,7 +3,8 @@ import numpy as np, pandas as pd, json, lightgbm as lgb
 from sklearn.metrics import average_precision_score, roc_auc_score, brier_score_loss
 from sklearn.isotonic import IsotonicRegression
 z=np.load('data/arrays.npz'); A=(z['A']>0).astype(np.float32); days=pd.to_datetime(z['days']); T,nI,nJ=A.shape
-wa,wl=z['wa'],z['wl']; W0,S0,STEP=24.8,-13.0,0.25
+wa,wl=z['wa'],z['wl']; from region import get_region
+_R=get_region(); W0,S0,STEP=_R['W'],_R['S'],_R['step']
 # map cell -> weather point (nearest)
 clon=W0+STEP*(np.arange(nI)+.5); clat=S0+STEP*(np.arange(nJ)+.5)
 wi=np.abs(clon[:,None]-wl[None,:]).argmin(1); wj=np.abs(clat[:,None]-wa[None,:]).argmin(1)
@@ -74,7 +75,7 @@ for k in range(1,13):
     s=mo==k
     if y[s].sum()>0 and y[s].sum()<s.sum(): pm[k]={'pos_rate':round(float(y[s].mean()),3),'pr_auc':round(float(average_precision_score(y[s],p[s])),3),'roc_auc':round(float(roc_auc_score(y[s],p[s])),3)}
 out['monthly_held_out_2025_no_coords']=pm
-out['footprint']={'bbox_WSEN':[24.8,-13.0,29.0,-8.2],'cell_deg':STEP,'cells':int(nI*nJ),'held_out_cells':int(isheld.sum()),'train':'2020-01-01..2023-12-31','val':'2024','test':'2025','weather_lag_days':WL}
+out['footprint']={'bbox_WSEN':list(_R['bbox_WSEN']),'cell_deg':STEP,'cells':int(nI*nJ),'held_out_cells':int(isheld.sum()),'train':'2020-01-01..2023-12-31','val':'2024','test':'2025','weather_lag_days':WL}
 json.dump(out,open('data/results.json','w'),indent=1)
 m.booster_.save_model(os.path.join(os.path.dirname(os.path.abspath(__file__)),'model.txt'))
 print(json.dumps({k:v for k,v in out.items() if '|' in k},indent=0)[:6000])
