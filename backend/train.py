@@ -15,8 +15,8 @@ from features import build_features, BASE as BASEF, WL
 F=build_features(A,tmax,tmin,pr,ws,rh,days.dayofyear.values)
 II,JJ=np.meshgrid(np.arange(nI),np.arange(nJ),indexing='ij')
 F['lat']=np.broadcast_to(clat[JJ][None],A.shape); F['lon']=np.broadcast_to(clon[II][None],A.shape)
-# block id: 4x4-cell (1 deg) blocks
-block=(II//4)*10+(JJ//4)
+# block id: 1-degree blocks (round(1/step) cells per side); held out as whole blocks
+_bs=max(1,int(round(1.0/STEP))); block=(II//_bs)*10000+(JJ//_bs)
 rng=np.random.RandomState(7); ub=np.unique(block); held=set(rng.choice(ub,size=len(ub)//4,replace=False).tolist())
 isheld=np.isin(block,list(held))
 print('blocks',len(ub),'held-out blocks',len(held),'held-out cells',int(isheld.sum()),'of',nI*nJ)
@@ -77,7 +77,11 @@ for k in range(1,13):
     if y[s].sum()>0 and y[s].sum()<s.sum(): pm[k]={'pos_rate':round(float(y[s].mean()),3),'pr_auc':round(float(average_precision_score(y[s],p[s])),3),'roc_auc':round(float(roc_auc_score(y[s],p[s])),3)}
 out[f'monthly_held_out_{TY}_no_coords']=pm
 out['footprint']={'bbox_WSEN':list(_R['bbox_WSEN']),'cell_deg':STEP,'cells':int(nI*nJ),'held_out_cells':int(isheld.sum()),'train':f'{min(TRY)}-01-01..{max(TRY)}-12-31','val':str(VY),'test':str(TY),'weather_lag_days':WL}
-json.dump(out,open('data/results.json','w'),indent=1)
-m.booster_.save_model(os.path.join(os.path.dirname(os.path.abspath(__file__)),'model.txt'))
+import hashlib
+os.makedirs(os.path.dirname(_R['model_path']),exist_ok=True); m.booster_.save_model(_R['model_path'])
+out['model_sha256']=hashlib.sha256(open(_R['model_path'],'rb').read()).hexdigest(); out['region']=_R['id']
+out['features']=list(feats); out['trained_utc']=pd.Timestamp.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+os.makedirs('data',exist_ok=True); json.dump(out,open('data/results.json','w'),indent=1)
+os.makedirs(os.path.dirname(_R['results_path']),exist_ok=True); json.dump(out,open(_R['results_path'],'w'),indent=1)
 print(json.dumps({k:v for k,v in out.items() if '|' in k},indent=0)[:6000])
 print(out['importance_gain']); print(rel); print(pm)

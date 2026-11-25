@@ -9,18 +9,17 @@ def test_default_region_matches_pilot():
 def test_unknown_region_fails():
     with pytest.raises(SystemExit): get_region('atlantis')
 
-def test_manifest_no_estimate_without_results(tmp_path):
-    import json, shutil
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-    import manifest
+def test_manifest_no_estimate_without_results(tmp_path, monkeypatch):
+    import json, importlib
     root = tmp_path; (root / 'backend').mkdir(); (root / 'public' / 'data').mkdir(parents=True)
-    cfg = {'a': {'label': 'A', 'bbox_WSEN': [0, 0, 1, 1], 'cell_deg': .25, 'status': 'experimental', 'validated': False, 'output': 'public/data/risk-a.json', 'results': 'backend/results-a.json'}}
-    json.dump(cfg, open(root / 'backend' / 'regions.json', 'w')); json.dump({'date': '2026-11-25'}, open(root / 'public' / 'data' / 'risk-a.json', 'w'))
-    assert manifest.build(str(root))['regions'][0]['estimates_available'] is False   # risk file but no held-out results
-    json.dump({}, open(root / 'backend' / 'results-a.json', 'w'))
-    assert manifest.build(str(root))['regions'][0]['estimates_available'] is True
+    cfg = {'a': {'label': 'A', 'bbox_WSEN': [0, 0, 1, 1], 'cell_deg': .25, 'train_years': [2020], 'val_year': 2021, 'test_year': 2022, 'status': 'experimental', 'validated': False, 'output': 'public/data/risk-a.json'}}
+    json.dump(cfg, open(root / 'regions.json', 'w')); json.dump({'date': '2026-11-25'}, open(root / 'public' / 'data' / 'risk-a.json', 'w'))
+    monkeypatch.setenv('PHOENIX_ROOT', str(root)); monkeypatch.setenv('REGIONS_FILE', str(root / 'regions.json'))
+    import region, manifest; importlib.reload(region); importlib.reload(manifest)
+    r = manifest.build()['regions'][0]
+    assert r['estimates_available'] is False and r['reasons']   # risk file but no results/model: no estimate
 
 def test_pilot_manifest_entry():
-    import manifest
+    import importlib, region, manifest; importlib.reload(region); importlib.reload(manifest)
     r = manifest.build()['regions'][0]
-    assert r['id'] == 'haut-katanga' and r['has_heldout_results'] and r['validated'] is False
+    assert r['id'] == 'haut-katanga' and r['validated'] is False and r['estimates_available'] is True

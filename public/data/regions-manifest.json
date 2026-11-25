@@ -14,8 +14,8 @@
    "validated": false,
    "risk_file": "/data/risk-haut-katanga.json",
    "risk_date": "2026-11-25",
-   "has_heldout_results": true,
-   "estimates_available": true
+   "estimates_available": true,
+   "reasons": []
   }
  ]
 }

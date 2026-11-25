@@ -22,9 +22,9 @@ def get(url, tries=4):
     raise RuntimeError('download failed: ' + url)
 
 def main(today=None, out=None, model=None):
-    out = out or get_region()['output']
-    import os
-    model = model or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model.txt')
+    R = get_region(); out = out or R['output_path']
+    import os, hashlib
+    model = model or R['model_path']
     D = pd.Timestamp(today or dt.datetime.utcnow().date())
     days = pd.date_range(D - pd.Timedelta(days=109), D)   # 110-day window ending on the target day
     T = len(days); di = {d: i for i, d in enumerate(days)}
@@ -67,11 +67,11 @@ def main(today=None, out=None, model=None):
                           'date': D.date().isoformat(), 'cell_size_deg': STEP})
     last_fire = max(seen_dates) if seen_dates else None
     doc = {'experimental': True, 'product': 'Daily satellite-detection risk (probability that VIIRS detects at least one nominal/high-confidence fire pixel in the cell on this UTC day)',
-           'not_a_confirmed_fire_forecast': True, 'region': 'Haut-Katanga pilot footprint (bounding box, not an administrative boundary)',
+           'not_a_confirmed_fire_forecast': True, 'region_id': R['id'], 'region': R['label'], 'model_sha256': hashlib.sha256(open(model, 'rb').read()).hexdigest(),
            'bbox_WSEN': list(BBOX), 'cell_deg': STEP, 'date': D.date().isoformat(), 'generated_utc': dt.datetime.utcnow().isoformat(timespec='seconds') + 'Z',
            'inputs': {'fire_source': 'NASA FIRMS NOAA-20 VIIRS NRT (regional CSV, last 7 days)', 'fire_detections_in_footprint_last_7d': n_det,
                       'latest_fire_date_seen': last_fire, 'weather_source': 'NASA POWER daily (0.5 deg), used with a 3-day lag'},
-           'model': 'LightGBM, trained on 2020-2023 NOAA-20 VIIRS detections; see MODEL_CARD.md for 2025 held-out results',
+           'model': f"LightGBM, trained on {min(R['train_years'])}-{max(R['train_years'])} NOAA-20 VIIRS detections; held-out results for {R['test_year']} in the region results file",
            'cells': cells}
     import os; os.makedirs(os.path.dirname(out), exist_ok=True); json.dump(doc, open(out, 'w'))
     print('wrote', out, 'cells', len(cells), 'detections_7d', n_det, 'mean p', round(float(p.mean()), 3), 'max', round(float(p.max()), 3))

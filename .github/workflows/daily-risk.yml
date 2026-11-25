@@ -24,23 +24,9 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11", cache: pip, cache-dependency-path: backend/requirements.txt }
       - run: pip install -r backend/requirements.txt
-      - name: Start from the live risk file (keeps healthy prior output)
-        id: live
-        run: |
-          today=$(date -u +%F); live=none
-          if [ -n "$SITE_URL" ] && curl -fsS "$SITE_URL/data/risk-haut-katanga.json" -o /tmp/live-risk.json; then
-            live=$(python3 -c "import json;print(json.load(open('/tmp/live-risk.json')).get('date',''))" 2>/dev/null || echo bad)
-            if [ "$live" != "bad" ] && [ -n "$live" ]; then cp /tmp/live-risk.json public/data/risk-haut-katanga.json; fi
-          fi
-          echo "live risk date: $live (today $today)"
-          if [ "$live" = "$today" ]; then echo "need_risk=no" >> "$GITHUB_OUTPUT"; else echo "need_risk=yes" >> "$GITHUB_OUTPUT"; fi
-      - name: Risk (refuses to write if weather for D-3 is not published yet)
-        if: steps.live.outputs.need_risk == 'yes'
-        run: |
-          if python backend/predict.py; then echo "risk updated"; else echo "::notice::risk not ready yet, previous output kept (labelled with its own date); retry on the next run"; fi
-      - name: Hotspots (always)
-        run: python backend/hotspots.py || echo "::warning::hotspot refresh failed; previous files stay and go stale after 36 h"
-      - run: python backend/manifest.py
+      - name: Refresh all regions (live baseline, risk if not today, hotspots always, manifest, publish check)
+        id: refresh
+        run: python backend/refresh.py   # exits non-zero (no deploy) if a risk date would go backwards, hotspots are stale or the manifest disagrees
       - uses: oven-sh/setup-bun@v2
       - name: Build site with the current data
         run: bun install --frozen-lockfile && bun run build
@@ -50,7 +36,7 @@ jobs:
           path: .output/public
           retention-days: 3
       - name: Deploy to Cloudflare (only when the token secret exists)
-        if: env.CF_TOKEN != ''
+        if: env.CF_TOKEN != '' && steps.refresh.outputs.publish == 'yes'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

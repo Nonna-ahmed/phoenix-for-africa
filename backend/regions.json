@@ -23,6 +23,7 @@
     "validated": false,
     "firms_archive_sat": "viirs-jpss1",
     "power_grid_deg": 0.5,
-    "results": "backend/results.json"
+    "results": "backend/results.json",
+    "model": "backend/model.txt"
   }
 }
