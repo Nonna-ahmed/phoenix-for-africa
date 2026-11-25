@@ -36,7 +36,7 @@ It downloads free NASA data and rewrites `public/data/risk-haut-katanga.json`. R
 ## 5. Optional settings (copy `.env.example` to `.env`)
 - `FIRMS_MAP_KEY`: free key from NASA FIRMS. Only needed for the live "Active Fires" page on your computer.
 - `VITE_API_BASE_URL`: only if you later run your own prediction server. Leave empty to use the static file.
-- AI Brief and AI Planner depend on the Lovable AI gateway and stay off outside Lovable. Nothing is sent anywhere unless you add your own provider later.
+- AI Brief and AI Planner are switched off: the server routes return 501 and no AI provider code is included. Nothing is sent to any AI service.
 
 ## 6. Free hosting
 The site builds for Cloudflare Workers (free plan). The daily GitHub Action in `.github/workflows/daily-risk.yml` refreshes the risk file for free on a public repository.
