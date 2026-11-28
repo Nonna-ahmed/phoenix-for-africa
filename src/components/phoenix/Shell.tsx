@@ -49,7 +49,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <div className="border-b bg-primary/10 px-4 py-1.5 text-center text-xs text-primary">
-        Experimental: daily satellite-detection risk for 13 rectangular study areas across Africa, each with its own tested model. They are not administrative boundaries and some include neighbouring countries. Hotspots are satellite detections, not confirmed ground fires. <RiskFreshness />
+        Experimental: daily satellite-detection risk for 13 study areas across Africa, each with its own tested model, drawn inside country borders. They are not administrative boundaries. Hotspots are satellite detections, not confirmed ground fires. <RiskFreshness />
       </div>
       <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
       <footer className="border-t px-4 py-6 text-center text-xs text-muted-foreground">
