@@ -50,10 +50,10 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
   const areas = AREA_CODES.map((code) => useArea(code, codes, regionId, on)).filter((a) => a.inScope);
 
   // GRID3 — one independent query per type, only when switched on and a country is selected
-  const g = (id: LayerId, t: string) => useSafeLocations(countryCode, bbox, on[id], [t]);
+  const g = (id: LayerId, t: string, extra: string[] = []) => useSafeLocations(countryCode, bbox, on[id], [t, ...extra]);
   const grid3 = {
     grid3_health: g("grid3_health", "health_facility"), grid3_school: g("grid3_school", "school"),
-    grid3_religious: g("grid3_religious", "religious_center"), grid3_settlement: g("grid3_settlement", "settlement"),
+    grid3_religious: g("grid3_religious", "religious_center"), grid3_safe: g("grid3_safe", "potential_safe_location", ["displacement_site"]), grid3_settlement: g("grid3_settlement", "settlement"),
   };
 
   // NASA POWER native grid (weather + soil moisture), one variable at a time, only while on

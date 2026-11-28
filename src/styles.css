@@ -42,6 +42,7 @@
   --color-loc-school: var(--loc-school);
   --color-loc-religious: var(--loc-religious);
   --color-loc-settlement: var(--loc-settlement);
+  --color-loc-safe: var(--loc-safe);
   --color-layer-weather: var(--layer-weather);
   --color-layer-soil: var(--layer-soil);
   --color-layer-landcover: var(--layer-landcover);
@@ -85,6 +86,7 @@
   --loc-school: oklch(0.82 0.12 100);
   --loc-religious: oklch(0.7 0.1 290);
   --loc-settlement: oklch(0.65 0.02 70);
+  --loc-safe: oklch(0.75 0.16 55);
   --layer-weather: oklch(0.78 0.1 210);
   --layer-soil: oklch(0.62 0.12 60);
   --layer-landcover: oklch(0.7 0.16 140);

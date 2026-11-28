@@ -120,7 +120,7 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
         {locations.map((l) => {
           const confirmed = isConfirmedShelter(l);
           if (confirmed ? !on.shelters_verified : false) return null;
-          const c = confirmed ? css("--shelter") : css(l.locationType === "health_facility" ? "--loc-health" : l.locationType === "school" ? "--loc-school" : l.locationType === "religious_center" ? "--loc-religious" : "--loc-settlement");
+          const c = confirmed ? css("--shelter") : css(l.locationType === "health_facility" ? "--loc-health" : l.locationType === "school" ? "--loc-school" : l.locationType === "religious_center" ? "--loc-religious" : l.locationType === "potential_safe_location" || l.locationType === "displacement_site" ? "--loc-safe" : "--loc-settlement");
           const r = confirmed ? 8 : l.locationType === "settlement" ? 2.5 : 4;
           return (
             <CircleMarker key={l.id} center={[l.latitude, l.longitude]} radius={r} pathOptions={{ color: confirmed ? css("--foreground") : c, weight: confirmed ? 3 : 1, fillColor: c, fillOpacity: 0.85 }}>
