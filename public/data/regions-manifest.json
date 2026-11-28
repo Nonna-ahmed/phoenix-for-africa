@@ -3,6 +3,9 @@
   {
    "id": "haut-katanga",
    "label": "Haut-Katanga pilot (rectangle, not an admin boundary; includes part of Zambia)",
+   "name": "Haut-Katanga",
+   "country": "Democratic Republic of Congo",
+   "country_code": "CD",
    "bbox_WSEN": [
     24.8,
     -13.0,
@@ -15,7 +18,1576 @@
    "risk_file": "/data/risk-haut-katanga.json",
    "risk_date": "2026-11-25",
    "estimates_available": true,
-   "reasons": []
+   "reasons": [],
+   "model": {
+    "selected": "no_coords",
+    "type": "LightGBM",
+    "format": "lightgbm-txt",
+    "uses_weather": true,
+    "test_year": 2025,
+    "trained_utc": null,
+    "features": 17,
+    "held_out": {
+     "pr_auc": 0.9183,
+     "roc_auc": 0.9725,
+     "brier": 0.0532,
+     "recall_top10pct": 0.3983,
+     "precision_top10pct": 0.9618,
+     "pos_rate": 0.2415
+    },
+    "reason": null,
+    "rule": null,
+    "table": []
+   }
+  },
+  {
+   "id": "ao-moxico",
+   "label": "Moxico & Bie study area (eastern Angola)",
+   "name": "Moxico & Bie",
+   "country": "Angola",
+   "country_code": "AO",
+   "bbox_WSEN": [
+    14.5,
+    -12.5,
+    18.5,
+    -8.0
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-ao-moxico.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T06:58:53Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.9525,
+     "roc_auc": 0.9539,
+     "brier": 0.0682,
+     "recall_top10pct": 0.2407,
+     "precision_top10pct": 0.9973,
+     "pos_rate": 0.4142
+    },
+    "reason": "Best overall was lgbm_nowx (0.9548); the best model that needs no weather data was lgbm_nowx (0.9548, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk. Within 0.003 PR-AUC the cheaper model wins, so logit_nowx was kept.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9548,
+      "roc_auc": 0.9591,
+      "brier": 0.0732,
+      "recall_top10pct": 0.2404,
+      "precision_top10pct": 0.9959
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.9541,
+      "roc_auc": 0.9601,
+      "brier": 0.0696,
+      "recall_top10pct": 0.2397,
+      "precision_top10pct": 0.9932
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.9534,
+      "roc_auc": 0.9595,
+      "brier": 0.0685,
+      "recall_top10pct": 0.2397,
+      "precision_top10pct": 0.9932
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9525,
+      "roc_auc": 0.9539,
+      "brier": 0.0682,
+      "recall_top10pct": 0.2407,
+      "precision_top10pct": 0.9973
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.9505,
+      "roc_auc": 0.9564,
+      "brier": 0.0702,
+      "recall_top10pct": 0.2384,
+      "precision_top10pct": 0.9877
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.9394,
+      "roc_auc": 0.9438,
+      "brier": 0.0788,
+      "recall_top10pct": 0.2378,
+      "precision_top10pct": 0.9849
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.9316,
+      "roc_auc": 0.9483,
+      "brier": 0.2101,
+      "recall_top10pct": 0.2338,
+      "precision_top10pct": 0.9685
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8057,
+      "roc_auc": 0.8757,
+      "brier": 0.1171,
+      "recall_top10pct": 0.2001,
+      "precision_top10pct": 0.8288
+     }
+    ]
+   }
+  },
+  {
+   "id": "zm-central",
+   "label": "Central & Lusaka study area (Zambia)",
+   "name": "Central & Lusaka",
+   "country": "Zambia",
+   "country_code": "ZM",
+   "bbox_WSEN": [
+    23.5,
+    -16.0,
+    27.5,
+    -11.5
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-zm-central.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "lgbm_nowx",
+    "type": "LightGBM (no weather)",
+    "format": "lightgbm-txt",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T06:59:10Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.9532,
+     "roc_auc": 0.9728,
+     "brier": 0.0616,
+     "recall_top10pct": 0.2672,
+     "precision_top10pct": 0.9932,
+     "pos_rate": 0.3716
+    },
+    "reason": "Best overall was lgbm_full (0.9540); the best model that needs no weather data was lgbm_nowx (0.9532, +0.0008). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.954,
+      "roc_auc": 0.9731,
+      "brier": 0.0615,
+      "recall_top10pct": 0.2672,
+      "precision_top10pct": 0.9932
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9532,
+      "roc_auc": 0.9728,
+      "brier": 0.0616,
+      "recall_top10pct": 0.2672,
+      "precision_top10pct": 0.9932
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.9523,
+      "roc_auc": 0.9724,
+      "brier": 0.0621,
+      "recall_top10pct": 0.2658,
+      "precision_top10pct": 0.9877
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.9492,
+      "roc_auc": 0.9708,
+      "brier": 0.0637,
+      "recall_top10pct": 0.265,
+      "precision_top10pct": 0.9849
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9476,
+      "roc_auc": 0.9723,
+      "brier": 0.0611,
+      "recall_top10pct": 0.2628,
+      "precision_top10pct": 0.9767
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.9372,
+      "roc_auc": 0.9639,
+      "brier": 0.0785,
+      "recall_top10pct": 0.2683,
+      "precision_top10pct": 0.9973
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.927,
+      "roc_auc": 0.9597,
+      "brier": 0.1437,
+      "recall_top10pct": 0.258,
+      "precision_top10pct": 0.9589
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8291,
+      "roc_auc": 0.8964,
+      "brier": 0.0969,
+      "recall_top10pct": 0.2344,
+      "precision_top10pct": 0.8712
+     }
+    ]
+   }
+  },
+  {
+   "id": "mz-zambezia",
+   "label": "Zambezia & Nampula study area (Mozambique)",
+   "name": "Zambezia & Nampula",
+   "country": "Mozambique",
+   "country_code": "MZ",
+   "bbox_WSEN": [
+    36.0,
+    -17.0,
+    40.0,
+    -12.5
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-mz-zambezia.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T06:59:29Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.9225,
+     "roc_auc": 0.9586,
+     "brier": 0.0701,
+     "recall_top10pct": 0.3183,
+     "precision_top10pct": 0.9836,
+     "pos_rate": 0.309
+    },
+    "reason": "Best overall was logit_nowx (0.9225); the best model that needs no weather data was logit_nowx (0.9225, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9225,
+      "roc_auc": 0.9586,
+      "brier": 0.0701,
+      "recall_top10pct": 0.3183,
+      "precision_top10pct": 0.9836
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9182,
+      "roc_auc": 0.9587,
+      "brier": 0.0859,
+      "recall_top10pct": 0.3152,
+      "precision_top10pct": 0.974
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.9149,
+      "roc_auc": 0.9588,
+      "brier": 0.0698,
+      "recall_top10pct": 0.3134,
+      "precision_top10pct": 0.9685
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.9146,
+      "roc_auc": 0.9584,
+      "brier": 0.0702,
+      "recall_top10pct": 0.3152,
+      "precision_top10pct": 0.974
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.9024,
+      "roc_auc": 0.9556,
+      "brier": 0.0723,
+      "recall_top10pct": 0.3121,
+      "precision_top10pct": 0.9644
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8922,
+      "roc_auc": 0.9419,
+      "brier": 0.2126,
+      "recall_top10pct": 0.3072,
+      "precision_top10pct": 0.9493
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8611,
+      "roc_auc": 0.9395,
+      "brier": 0.0912,
+      "recall_top10pct": 0.305,
+      "precision_top10pct": 0.9425
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.7484,
+      "roc_auc": 0.8665,
+      "brier": 0.1134,
+      "recall_top10pct": 0.262,
+      "precision_top10pct": 0.8096
+     }
+    ]
+   }
+  },
+  {
+   "id": "tz-ruvuma",
+   "label": "Ruvuma & Mtwara study area (southern Tanzania)",
+   "name": "Ruvuma & Mtwara",
+   "country": "Tanzania",
+   "country_code": "TZ",
+   "bbox_WSEN": [
+    33.5,
+    -11.0,
+    37.5,
+    -6.5
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-tz-ruvuma.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T06:59:48Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.9011,
+     "roc_auc": 0.9413,
+     "brier": 0.0889,
+     "recall_top10pct": 0.2685,
+     "precision_top10pct": 0.9671,
+     "pos_rate": 0.3601
+    },
+    "reason": "Best overall was lgbm_full (0.9029); the best model that needs no weather data was logit_nowx (0.9011, +0.0018). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.9029,
+      "roc_auc": 0.9419,
+      "brier": 0.0896,
+      "recall_top10pct": 0.2685,
+      "precision_top10pct": 0.9671
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9011,
+      "roc_auc": 0.9413,
+      "brier": 0.0889,
+      "recall_top10pct": 0.2685,
+      "precision_top10pct": 0.9671
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.8993,
+      "roc_auc": 0.9409,
+      "brier": 0.0915,
+      "recall_top10pct": 0.2685,
+      "precision_top10pct": 0.9671
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.8987,
+      "roc_auc": 0.942,
+      "brier": 0.1152,
+      "recall_top10pct": 0.2674,
+      "precision_top10pct": 0.963
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.8978,
+      "roc_auc": 0.9386,
+      "brier": 0.0918,
+      "recall_top10pct": 0.2674,
+      "precision_top10pct": 0.963
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8802,
+      "roc_auc": 0.9323,
+      "brier": 0.2272,
+      "recall_top10pct": 0.2617,
+      "precision_top10pct": 0.9425
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8269,
+      "roc_auc": 0.8936,
+      "brier": 0.1319,
+      "recall_top10pct": 0.2564,
+      "precision_top10pct": 0.9233
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.7352,
+      "roc_auc": 0.8427,
+      "brier": 0.1421,
+      "recall_top10pct": 0.2199,
+      "precision_top10pct": 0.7918
+     }
+    ]
+   }
+  },
+  {
+   "id": "ng-middle-belt",
+   "label": "Niger & Kwara study area (Middle Belt, Nigeria)",
+   "name": "Niger & Kwara",
+   "country": "Nigeria",
+   "country_code": "NG",
+   "bbox_WSEN": [
+    3.5,
+    8.0,
+    7.5,
+    12.5
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-ng-middle-belt.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "lgbm_nowx",
+    "type": "LightGBM (no weather)",
+    "format": "lightgbm-txt",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:00:05Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.9058,
+     "roc_auc": 0.9498,
+     "brier": 0.0809,
+     "recall_top10pct": 0.3196,
+     "precision_top10pct": 0.9904,
+     "pos_rate": 0.3099
+    },
+    "reason": "Best overall was rf_full (0.9109); the best model that needs no weather data was lgbm_nowx (0.9058, +0.0051). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.9109,
+      "roc_auc": 0.9509,
+      "brier": 0.0799,
+      "recall_top10pct": 0.3192,
+      "precision_top10pct": 0.989
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.9075,
+      "roc_auc": 0.9502,
+      "brier": 0.0805,
+      "recall_top10pct": 0.3201,
+      "precision_top10pct": 0.9918
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9058,
+      "roc_auc": 0.9498,
+      "brier": 0.0809,
+      "recall_top10pct": 0.3196,
+      "precision_top10pct": 0.9904
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9019,
+      "roc_auc": 0.9456,
+      "brier": 0.0825,
+      "recall_top10pct": 0.3152,
+      "precision_top10pct": 0.9767
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.9018,
+      "roc_auc": 0.9466,
+      "brier": 0.0835,
+      "recall_top10pct": 0.3192,
+      "precision_top10pct": 0.989
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8798,
+      "roc_auc": 0.9322,
+      "brier": 0.2201,
+      "recall_top10pct": 0.3108,
+      "precision_top10pct": 0.963
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8637,
+      "roc_auc": 0.925,
+      "brier": 0.1011,
+      "recall_top10pct": 0.3174,
+      "precision_top10pct": 0.9836
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.6986,
+      "roc_auc": 0.8376,
+      "brier": 0.141,
+      "recall_top10pct": 0.2423,
+      "precision_top10pct": 0.7507
+     }
+    ]
+   }
+  },
+  {
+   "id": "gh-north",
+   "label": "Northern Ghana study area",
+   "name": "Northern Ghana",
+   "country": "Ghana",
+   "country_code": "GH",
+   "bbox_WSEN": [
+    -3.5,
+    6.5,
+    0.5,
+    11.0
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-gh-north.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "lgbm_nowx",
+    "type": "LightGBM (no weather)",
+    "format": "lightgbm-txt",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:00:27Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.8545,
+     "roc_auc": 0.9404,
+     "brier": 0.0734,
+     "recall_top10pct": 0.3926,
+     "precision_top10pct": 0.9219,
+     "pos_rate": 0.2348
+    },
+    "reason": "Best overall was rf_full (0.8604); the best model that needs no weather data was lgbm_nowx (0.8545, +0.0059). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.8604,
+      "roc_auc": 0.9429,
+      "brier": 0.0727,
+      "recall_top10pct": 0.3967,
+      "precision_top10pct": 0.9315
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.8592,
+      "roc_auc": 0.943,
+      "brier": 0.0727,
+      "recall_top10pct": 0.3932,
+      "precision_top10pct": 0.9233
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.8545,
+      "roc_auc": 0.9404,
+      "brier": 0.0734,
+      "recall_top10pct": 0.3926,
+      "precision_top10pct": 0.9219
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.8542,
+      "roc_auc": 0.9393,
+      "brier": 0.0738,
+      "recall_top10pct": 0.3886,
+      "precision_top10pct": 0.9123
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.8429,
+      "roc_auc": 0.9352,
+      "brier": 0.0749,
+      "recall_top10pct": 0.3886,
+      "precision_top10pct": 0.9123
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8175,
+      "roc_auc": 0.9267,
+      "brier": 0.2167,
+      "recall_top10pct": 0.3851,
+      "precision_top10pct": 0.9041
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.6292,
+      "roc_auc": 0.8242,
+      "brier": 0.1297,
+      "recall_top10pct": 0.3092,
+      "precision_top10pct": 0.726
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.5693,
+      "roc_auc": 0.8367,
+      "brier": 0.1477,
+      "recall_top10pct": 0.269,
+      "precision_top10pct": 0.6315
+     }
+    ]
+   }
+  },
+  {
+   "id": "sn-groundnut",
+   "label": "Groundnut Basin study area (Senegal)",
+   "name": "Groundnut Basin",
+   "country": "Senegal",
+   "country_code": "SN",
+   "bbox_WSEN": [
+    -16.5,
+    12.0,
+    -12.5,
+    16.5
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-sn-groundnut.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:00:43Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.7677,
+     "roc_auc": 0.9184,
+     "brier": 0.0956,
+     "recall_top10pct": 0.3482,
+     "precision_top10pct": 0.8438,
+     "pos_rate": 0.2423
+    },
+    "reason": "Best overall was lgbm_full (0.7718); the best model that needs no weather data was logit_nowx (0.7677, +0.0041). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.7718,
+      "roc_auc": 0.92,
+      "brier": 0.0946,
+      "recall_top10pct": 0.3488,
+      "precision_top10pct": 0.8452
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.7677,
+      "roc_auc": 0.9184,
+      "brier": 0.0956,
+      "recall_top10pct": 0.3482,
+      "precision_top10pct": 0.8438
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.7673,
+      "roc_auc": 0.9193,
+      "brier": 0.1024,
+      "recall_top10pct": 0.3471,
+      "precision_top10pct": 0.8411
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.767,
+      "roc_auc": 0.9175,
+      "brier": 0.0964,
+      "recall_top10pct": 0.3493,
+      "precision_top10pct": 0.8466
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.7635,
+      "roc_auc": 0.9187,
+      "brier": 0.0958,
+      "recall_top10pct": 0.3431,
+      "precision_top10pct": 0.8315
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.7389,
+      "roc_auc": 0.8977,
+      "brier": 0.2422,
+      "recall_top10pct": 0.3369,
+      "precision_top10pct": 0.8164
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.5842,
+      "roc_auc": 0.7875,
+      "brier": 0.1529,
+      "recall_top10pct": 0.2809,
+      "precision_top10pct": 0.6808
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.3861,
+      "roc_auc": 0.7147,
+      "brier": 0.1681,
+      "recall_top10pct": 0.1854,
+      "precision_top10pct": 0.4493
+     }
+    ]
+   }
+  },
+  {
+   "id": "cm-adamawa",
+   "label": "Adamawa study area (northern Cameroon)",
+   "name": "Adamawa",
+   "country": "Cameroon",
+   "country_code": "CM",
+   "bbox_WSEN": [
+    10.5,
+    4.5,
+    14.5,
+    9.0
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-cm-adamawa.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:01:00Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.9055,
+     "roc_auc": 0.9614,
+     "brier": 0.063,
+     "recall_top10pct": 0.3281,
+     "precision_top10pct": 0.9493,
+     "pos_rate": 0.2893
+    },
+    "reason": "Best overall was hgb_full (0.9115); the best model that needs no weather data was logit_nowx (0.9055, +0.0060). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.9115,
+      "roc_auc": 0.9629,
+      "brier": 0.0657,
+      "recall_top10pct": 0.3338,
+      "precision_top10pct": 0.9658
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.9112,
+      "roc_auc": 0.9641,
+      "brier": 0.0636,
+      "recall_top10pct": 0.3338,
+      "precision_top10pct": 0.9658
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.9075,
+      "roc_auc": 0.9632,
+      "brier": 0.0637,
+      "recall_top10pct": 0.3314,
+      "precision_top10pct": 0.9589
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9055,
+      "roc_auc": 0.9614,
+      "brier": 0.063,
+      "recall_top10pct": 0.3281,
+      "precision_top10pct": 0.9493
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9003,
+      "roc_auc": 0.9624,
+      "brier": 0.0913,
+      "recall_top10pct": 0.331,
+      "precision_top10pct": 0.9575
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8792,
+      "roc_auc": 0.9537,
+      "brier": 0.1549,
+      "recall_top10pct": 0.3215,
+      "precision_top10pct": 0.9301
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8317,
+      "roc_auc": 0.9421,
+      "brier": 0.0871,
+      "recall_top10pct": 0.3011,
+      "precision_top10pct": 0.8712
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.7623,
+      "roc_auc": 0.8809,
+      "brier": 0.1006,
+      "recall_top10pct": 0.2869,
+      "precision_top10pct": 0.8301
+     }
+    ]
+   }
+  },
+  {
+   "id": "mg-west",
+   "label": "Western Madagascar study area",
+   "name": "Western Madagascar",
+   "country": "Madagascar",
+   "country_code": "MG",
+   "bbox_WSEN": [
+    44.0,
+    -20.0,
+    48.0,
+    -15.5
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-mg-west.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:01:20Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.9414,
+     "roc_auc": 0.9325,
+     "brier": 0.0989,
+     "recall_top10pct": 0.1802,
+     "precision_top10pct": 0.989,
+     "pos_rate": 0.5488
+    },
+    "reason": "Best overall was logit_nowx (0.9414); the best model that needs no weather data was logit_nowx (0.9414, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9414,
+      "roc_auc": 0.9325,
+      "brier": 0.0989,
+      "recall_top10pct": 0.1802,
+      "precision_top10pct": 0.989
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.9383,
+      "roc_auc": 0.9333,
+      "brier": 0.0978,
+      "recall_top10pct": 0.1787,
+      "precision_top10pct": 0.9808
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9372,
+      "roc_auc": 0.9328,
+      "brier": 0.0979,
+      "recall_top10pct": 0.1772,
+      "precision_top10pct": 0.9726
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.9351,
+      "roc_auc": 0.9321,
+      "brier": 0.0982,
+      "recall_top10pct": 0.1782,
+      "precision_top10pct": 0.9781
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.9341,
+      "roc_auc": 0.9315,
+      "brier": 0.0983,
+      "recall_top10pct": 0.178,
+      "precision_top10pct": 0.9767
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.9217,
+      "roc_auc": 0.9197,
+      "brier": 0.2594,
+      "recall_top10pct": 0.1742,
+      "precision_top10pct": 0.9562
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.9028,
+      "roc_auc": 0.9119,
+      "brier": 0.1283,
+      "recall_top10pct": 0.166,
+      "precision_top10pct": 0.911
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.8283,
+      "roc_auc": 0.8385,
+      "brier": 0.1592,
+      "recall_top10pct": 0.1563,
+      "precision_top10pct": 0.8575
+     }
+    ]
+   }
+  },
+  {
+   "id": "za-limpopo",
+   "label": "Limpopo study area (South Africa)",
+   "name": "Limpopo",
+   "country": "South Africa",
+   "country_code": "ZA",
+   "bbox_WSEN": [
+    27.0,
+    -28.0,
+    31.0,
+    -23.5
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-za-limpopo.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:01:47Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.7172,
+     "roc_auc": 0.8531,
+     "brier": 0.1304,
+     "recall_top10pct": 0.2947,
+     "precision_top10pct": 0.8329,
+     "pos_rate": 0.2826
+    },
+    "reason": "Best overall was logit_nowx (0.7172); the best model that needs no weather data was logit_nowx (0.7172, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.7172,
+      "roc_auc": 0.8531,
+      "brier": 0.1304,
+      "recall_top10pct": 0.2947,
+      "precision_top10pct": 0.8329
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.7132,
+      "roc_auc": 0.8544,
+      "brier": 0.1316,
+      "recall_top10pct": 0.2957,
+      "precision_top10pct": 0.8356
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.7055,
+      "roc_auc": 0.8512,
+      "brier": 0.1324,
+      "recall_top10pct": 0.2937,
+      "precision_top10pct": 0.8301
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.7027,
+      "roc_auc": 0.8506,
+      "brier": 0.133,
+      "recall_top10pct": 0.2928,
+      "precision_top10pct": 0.8274
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.6959,
+      "roc_auc": 0.847,
+      "brier": 0.1343,
+      "recall_top10pct": 0.2855,
+      "precision_top10pct": 0.8068
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.6919,
+      "roc_auc": 0.8423,
+      "brier": 0.3759,
+      "recall_top10pct": 0.2918,
+      "precision_top10pct": 0.8247
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.5217,
+      "roc_auc": 0.755,
+      "brier": 0.17,
+      "recall_top10pct": 0.2046,
+      "precision_top10pct": 0.5781
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.5175,
+      "roc_auc": 0.7315,
+      "brier": 0.2147,
+      "recall_top10pct": 0.2128,
+      "precision_top10pct": 0.6014
+     }
+    ]
+   }
+  },
+  {
+   "id": "zw-mashonaland",
+   "label": "Mashonaland study area (Zimbabwe)",
+   "name": "Mashonaland",
+   "country": "Zimbabwe",
+   "country_code": "ZW",
+   "bbox_WSEN": [
+    29.0,
+    -19.5,
+    33.0,
+    -15.0
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-zw-mashonaland.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:02:06Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.8269,
+     "roc_auc": 0.924,
+     "brier": 0.0938,
+     "recall_top10pct": 0.3494,
+     "precision_top10pct": 0.9123,
+     "pos_rate": 0.2611
+    },
+    "reason": "Best overall was lgbm_nowx (0.8279); the best model that needs no weather data was lgbm_nowx (0.8279, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk. Within 0.003 PR-AUC the cheaper model wins, so logit_nowx was kept.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.8279,
+      "roc_auc": 0.9226,
+      "brier": 0.0938,
+      "recall_top10pct": 0.3526,
+      "precision_top10pct": 0.9205
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.8269,
+      "roc_auc": 0.924,
+      "brier": 0.0938,
+      "recall_top10pct": 0.3494,
+      "precision_top10pct": 0.9123
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.8248,
+      "roc_auc": 0.9243,
+      "brier": 0.093,
+      "recall_top10pct": 0.3499,
+      "precision_top10pct": 0.9137
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.8237,
+      "roc_auc": 0.9213,
+      "brier": 0.0947,
+      "recall_top10pct": 0.3531,
+      "precision_top10pct": 0.9219
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.8158,
+      "roc_auc": 0.9186,
+      "brier": 0.097,
+      "recall_top10pct": 0.352,
+      "precision_top10pct": 0.9192
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.7887,
+      "roc_auc": 0.9052,
+      "brier": 0.2527,
+      "recall_top10pct": 0.3431,
+      "precision_top10pct": 0.8959
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.6596,
+      "roc_auc": 0.8798,
+      "brier": 0.1262,
+      "recall_top10pct": 0.288,
+      "precision_top10pct": 0.7521
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.6183,
+      "roc_auc": 0.8039,
+      "brier": 0.1475,
+      "recall_top10pct": 0.2718,
+      "precision_top10pct": 0.7096
+     }
+    ]
+   }
+  },
+  {
+   "id": "et-south",
+   "label": "Southern Ethiopia study area",
+   "name": "Southern Ethiopia",
+   "country": "Ethiopia",
+   "country_code": "ET",
+   "bbox_WSEN": [
+    33.0,
+    6.5,
+    37.0,
+    11.0
+   ],
+   "cell_deg": 0.5,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-et-south.json",
+   "risk_date": "2026-11-28",
+   "estimates_available": true,
+   "reasons": [],
+   "model": {
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
+    "test_year": 2025,
+    "trained_utc": "2026-11-28T07:02:25Z",
+    "features": 7,
+    "held_out": {
+     "pr_auc": 0.8685,
+     "roc_auc": 0.9518,
+     "brier": 0.0628,
+     "recall_top10pct": 0.4474,
+     "precision_top10pct": 0.9384,
+     "pos_rate": 0.2097
+    },
+    "reason": "Best overall was logit_nowx (0.8685); the best model that needs no weather data was logit_nowx (0.8685, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.8685,
+      "roc_auc": 0.9518,
+      "brier": 0.0628,
+      "recall_top10pct": 0.4474,
+      "precision_top10pct": 0.9384
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.8598,
+      "roc_auc": 0.9544,
+      "brier": 0.0651,
+      "recall_top10pct": 0.4468,
+      "precision_top10pct": 0.937
+     },
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.8592,
+      "roc_auc": 0.9524,
+      "brier": 0.0805,
+      "recall_top10pct": 0.4481,
+      "precision_top10pct": 0.9397
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.8584,
+      "roc_auc": 0.9535,
+      "brier": 0.0648,
+      "recall_top10pct": 0.4468,
+      "precision_top10pct": 0.937
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.854,
+      "roc_auc": 0.9521,
+      "brier": 0.0672,
+      "recall_top10pct": 0.4468,
+      "precision_top10pct": 0.937
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.844,
+      "roc_auc": 0.9437,
+      "brier": 0.1611,
+      "recall_top10pct": 0.4448,
+      "precision_top10pct": 0.9329
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.6598,
+      "roc_auc": 0.8457,
+      "brier": 0.0998,
+      "recall_top10pct": 0.3547,
+      "precision_top10pct": 0.7438
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.5435,
+      "roc_auc": 0.8523,
+      "brier": 0.1296,
+      "recall_top10pct": 0.288,
+      "precision_top10pct": 0.6041
+     }
+    ]
+   }
   }
- ]
+ ],
+ "generated_utc": "2026-11-28T07:02:37Z"
 }

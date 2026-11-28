@@ -1,0 +1,395 @@
+{
+ "lgbm_full|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.6887,
+  "roc_auc": 0.8519,
+  "brier": 0.1264,
+  "recall_top10pct": 0.3121,
+  "precision_top10pct": 0.8045
+ },
+ "lgbm_full|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.7055,
+  "roc_auc": 0.8512,
+  "brier": 0.1324,
+  "recall_top10pct": 0.2937,
+  "precision_top10pct": 0.8301
+ },
+ "lgbm_nowx|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.6878,
+  "roc_auc": 0.8519,
+  "brier": 0.1272,
+  "recall_top10pct": 0.3138,
+  "precision_top10pct": 0.8087
+ },
+ "lgbm_nowx|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.7132,
+  "roc_auc": 0.8544,
+  "brier": 0.1316,
+  "recall_top10pct": 0.2957,
+  "precision_top10pct": 0.8356
+ },
+ "hgb_full|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.6793,
+  "roc_auc": 0.8492,
+  "brier": 0.1274,
+  "recall_top10pct": 0.3103,
+  "precision_top10pct": 0.7998
+ },
+ "hgb_full|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.6959,
+  "roc_auc": 0.847,
+  "brier": 0.1343,
+  "recall_top10pct": 0.2855,
+  "precision_top10pct": 0.8068
+ },
+ "rf_full|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.6855,
+  "roc_auc": 0.8504,
+  "brier": 0.1269,
+  "recall_top10pct": 0.313,
+  "precision_top10pct": 0.8066
+ },
+ "rf_full|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.7027,
+  "roc_auc": 0.8506,
+  "brier": 0.133,
+  "recall_top10pct": 0.2928,
+  "precision_top10pct": 0.8274
+ },
+ "logit_nowx|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.685,
+  "roc_auc": 0.8495,
+  "brier": 0.127,
+  "recall_top10pct": 0.3138,
+  "precision_top10pct": 0.8087
+ },
+ "logit_nowx|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.7172,
+  "roc_auc": 0.8531,
+  "brier": 0.1304,
+  "recall_top10pct": 0.2947,
+  "precision_top10pct": 0.8329
+ },
+ "persistence_fire7|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.6473,
+  "roc_auc": 0.8277,
+  "brier": 0.3759,
+  "recall_top10pct": 0.3011,
+  "precision_top10pct": 0.7761
+ },
+ "persistence_fire1|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.5072,
+  "roc_auc": 0.7353,
+  "brier": 0.2025,
+  "recall_top10pct": 0.2339,
+  "precision_top10pct": 0.6027
+ },
+ "climatology_doy|seen_areas_2025": {
+  "n": 18980,
+  "pos_rate": 0.2577,
+  "pr_auc": 0.5134,
+  "roc_auc": 0.7655,
+  "brier": 0.1617,
+  "recall_top10pct": 0.2238,
+  "precision_top10pct": 0.5769
+ },
+ "persistence_fire7|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.6919,
+  "roc_auc": 0.8423,
+  "brier": 0.3759,
+  "recall_top10pct": 0.2918,
+  "precision_top10pct": 0.8247
+ },
+ "persistence_fire1|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.5175,
+  "roc_auc": 0.7315,
+  "brier": 0.2147,
+  "recall_top10pct": 0.2128,
+  "precision_top10pct": 0.6014
+ },
+ "climatology_doy|held_out_areas_2025": {
+  "n": 7300,
+  "pos_rate": 0.2826,
+  "pr_auc": 0.5217,
+  "roc_auc": 0.755,
+  "brier": 0.17,
+  "recall_top10pct": 0.2046,
+  "precision_top10pct": 0.5781
+ },
+ "model_sha256": "2ef7792691807cdd1481f584249849687962e696fb68f206fc6c79ef6218ced1",
+ "region": "za-limpopo",
+ "selected_model": "logit_nowx",
+ "model_format": "sklearn-joblib",
+ "model_type": "LogisticRegression (no weather)",
+ "features": [
+  "doy_sin",
+  "doy_cos",
+  "fire1",
+  "fire3",
+  "fire7",
+  "nb_fire7",
+  "days_since_fire"
+ ],
+ "uses_weather": false,
+ "footprint": {
+  "bbox_WSEN": [
+   27.0,
+   -28.0,
+   31.0,
+   -23.5
+  ],
+  "cell_deg": 0.5,
+  "cells": 72,
+  "held_out_cells": 20,
+  "train": "2021-01-01..2023-12-31",
+  "val": "2024",
+  "test": "2025",
+  "weather_lag_days": 3
+ },
+ "selection": {
+  "selected": "logit_nowx",
+  "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+  "tolerance": 0.003,
+  "beats_all_baselines": true,
+  "reason": "Best overall was logit_nowx (0.7172); the best model that needs no weather data was logit_nowx (0.7172, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk.",
+  "table": [
+   {
+    "model": "logit_nowx",
+    "kind": "candidate",
+    "family": "LogisticRegression (no weather)",
+    "uses_weather": false,
+    "features": 7,
+    "seconds": 0.0,
+    "pr_auc": 0.7172,
+    "roc_auc": 0.8531,
+    "brier": 0.1304,
+    "recall_top10pct": 0.2947,
+    "precision_top10pct": 0.8329
+   },
+   {
+    "model": "lgbm_nowx",
+    "kind": "candidate",
+    "family": "LightGBM (no weather)",
+    "uses_weather": false,
+    "features": 7,
+    "seconds": 0.5,
+    "best_iter": 39,
+    "pr_auc": 0.7132,
+    "roc_auc": 0.8544,
+    "brier": 0.1316,
+    "recall_top10pct": 0.2957,
+    "precision_top10pct": 0.8356
+   },
+   {
+    "model": "lgbm_full",
+    "kind": "candidate",
+    "family": "LightGBM",
+    "uses_weather": true,
+    "features": 17,
+    "seconds": 1.0,
+    "best_iter": 80,
+    "pr_auc": 0.7055,
+    "roc_auc": 0.8512,
+    "brier": 0.1324,
+    "recall_top10pct": 0.2937,
+    "precision_top10pct": 0.8301
+   },
+   {
+    "model": "rf_full",
+    "kind": "candidate",
+    "family": "RandomForest",
+    "uses_weather": true,
+    "features": 17,
+    "seconds": 15.5,
+    "pr_auc": 0.7027,
+    "roc_auc": 0.8506,
+    "brier": 0.133,
+    "recall_top10pct": 0.2928,
+    "precision_top10pct": 0.8274
+   },
+   {
+    "model": "hgb_full",
+    "kind": "candidate",
+    "family": "HistGradientBoosting",
+    "uses_weather": true,
+    "features": 17,
+    "seconds": 1.6,
+    "pr_auc": 0.6959,
+    "roc_auc": 0.847,
+    "brier": 0.1343,
+    "recall_top10pct": 0.2855,
+    "precision_top10pct": 0.8068
+   },
+   {
+    "model": "persistence_fire7",
+    "kind": "baseline",
+    "family": "baseline",
+    "uses_weather": false,
+    "features": 0,
+    "pr_auc": 0.6919,
+    "roc_auc": 0.8423,
+    "brier": 0.3759,
+    "recall_top10pct": 0.2918,
+    "precision_top10pct": 0.8247
+   },
+   {
+    "model": "climatology_doy",
+    "kind": "baseline",
+    "family": "baseline",
+    "uses_weather": false,
+    "features": 0,
+    "pr_auc": 0.5217,
+    "roc_auc": 0.755,
+    "brier": 0.17,
+    "recall_top10pct": 0.2046,
+    "precision_top10pct": 0.5781
+   },
+   {
+    "model": "persistence_fire1",
+    "kind": "baseline",
+    "family": "baseline",
+    "uses_weather": false,
+    "features": 0,
+    "pr_auc": 0.5175,
+    "roc_auc": 0.7315,
+    "brier": 0.2147,
+    "recall_top10pct": 0.2128,
+    "precision_top10pct": 0.6014
+   }
+  ]
+ },
+ "reliability_held_out": [
+  {
+   "bin": "0.0-0.1",
+   "n": 2546,
+   "mean_pred": 0.07,
+   "obs_rate": 0.055
+  },
+  {
+   "bin": "0.1-0.2",
+   "n": 1534,
+   "mean_pred": 0.137,
+   "obs_rate": 0.131
+  },
+  {
+   "bin": "0.2-0.3",
+   "n": 603,
+   "mean_pred": 0.248,
+   "obs_rate": 0.221
+  },
+  {
+   "bin": "0.3-0.4",
+   "n": 486,
+   "mean_pred": 0.349,
+   "obs_rate": 0.364
+  },
+  {
+   "bin": "0.4-0.5",
+   "n": 418,
+   "mean_pred": 0.447,
+   "obs_rate": 0.464
+  },
+  {
+   "bin": "0.5-0.6",
+   "n": 348,
+   "mean_pred": 0.549,
+   "obs_rate": 0.566
+  },
+  {
+   "bin": "0.6-0.7",
+   "n": 396,
+   "mean_pred": 0.649,
+   "obs_rate": 0.611
+  },
+  {
+   "bin": "0.7-0.8",
+   "n": 496,
+   "mean_pred": 0.751,
+   "obs_rate": 0.738
+  },
+  {
+   "bin": "0.8-0.9",
+   "n": 473,
+   "mean_pred": 0.842,
+   "obs_rate": 0.875
+  }
+ ],
+ "monthly_held_out": {
+  "1": {
+   "pos_rate": 0.158,
+   "pr_auc": 0.581
+  },
+  "2": {
+   "pos_rate": 0.089,
+   "pr_auc": 0.213
+  },
+  "3": {
+   "pos_rate": 0.102,
+   "pr_auc": 0.271
+  },
+  "4": {
+   "pos_rate": 0.082,
+   "pr_auc": 0.277
+  },
+  "5": {
+   "pos_rate": 0.282,
+   "pr_auc": 0.725
+  },
+  "6": {
+   "pos_rate": 0.503,
+   "pr_auc": 0.798
+  },
+  "7": {
+   "pos_rate": 0.552,
+   "pr_auc": 0.833
+  },
+  "8": {
+   "pos_rate": 0.584,
+   "pr_auc": 0.849
+  },
+  "9": {
+   "pos_rate": 0.433,
+   "pr_auc": 0.737
+  },
+  "10": {
+   "pos_rate": 0.347,
+   "pr_auc": 0.541
+  },
+  "11": {
+   "pos_rate": 0.12,
+   "pr_auc": 0.242
+  },
+  "12": {
+   "pos_rate": 0.121,
+   "pr_auc": 0.216
+  }
+ },
+ "trained_utc": "2026-11-28T07:01:47Z"
+}

@@ -2,11 +2,12 @@ import { lazy, Suspense, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { MapProps } from "./RiskMapInner";
-import { getCountry, scopeBbox } from "@/data/registry";
+import { COUNTRIES, getCountry, scopeBbox } from "@/data/registry";
 import { getAvailability } from "@/data/sources";
 import { DATASETS } from "@/data/datasets";
 import { CONNECTED, useSafeLocations, useFireReports, useHotspots, useRiskMap, useShelters } from "@/services/api/hooks";
 import { apiBaseUrl } from "@/services/api/client";
+import { staticCovers } from "@/services/staticRisk";
 import { getOsmHospitals, getOsmRoads } from "@/lib/osm.functions";
 import { getPowerGrid, type GridParam, type GridResult } from "@/lib/grid.functions";
 import { GRID_SCALE, LC_LEGEND, POP_BREAKS, SOIL_PARAMS, WEATHER_PARAMS, scaleColor, type RasterId } from "@/data/rasters";
@@ -14,6 +15,7 @@ import { getVegetation } from "@/lib/vegetation.functions";
 import { LAYERS, defaultLayerState, type LayerDef, type LayerId, type LayerState, type LayerStatus } from "./layers";
 
 const Inner = lazy(() => import("./RiskMapInner"));
+const AREA_CODES = COUNTRIES.map((c) => c.code);
 
 function Map(props: MapProps) {
   const fallback = <div style={{ height: props.height ?? 520 }} className="animate-pulse rounded-md border bg-muted" />;
@@ -42,9 +44,10 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
   const fires = useHotspots(bbox, days, on.fires);
 
   // Backend layers (risk, backend shelter file, reports), per connected country in scope
-  const codes = CONNECTED.filter((c) => !countryCode || c === countryCode);
-  const dz = useArea("DZ", codes, regionId, on), cd = useArea("CD", codes, regionId, on);
-  const areas = [dz, cd].filter((a) => a.inScope);
+  // Every country is a candidate area: the backend answers for CONNECTED countries, the static files for
+  // countries with a tested study area. COUNTRIES is a constant, so the hook order never changes.
+  const codes = AREA_CODES.filter((c) => !countryCode || c === countryCode);
+  const areas = AREA_CODES.map((code) => useArea(code, codes, regionId, on)).filter((a) => a.inScope);
 
   // GRID3 — one independent query per type, only when switched on and a country is selected
   const g = (id: LayerId, t: string) => useSafeLocations(countryCode, bbox, on[id], [t]);
@@ -75,9 +78,9 @@ export function RiskMap({ countryCode, regionId, initialLayers, riskFilter, heig
   const backendStatus = (key: "risk" | "shelters" | "reports", noun: string, needs?: (code: string) => boolean): LayerStatus => {
     const rel = areas.filter((a) => !needs || needs(a.code));
     if (rel.length === 0) return st("unavailable", "Unavailable for this country");
-    // Without a backend, only the experimental static risk file (Haut-Katanga pilot, DR Congo) is available.
+    // Without a backend, only the static per-study-area risk files are available.
     if (!backend && key !== "risk") return st("unavailable", "Data unavailable — PHOENIX backend not connected");
-    if (!backend && !rel.some((a) => a.code === "CD")) return st("unavailable", "Experimental risk covers only the Haut-Katanga pilot (DR Congo)");
+    if (!backend && !rel.some((a) => staticCovers({ country: a.code } as never))) return st("unavailable", "No tested model for this country yet");
     const qs = rel.map((a) => a[key]);
     if (qs.some((q) => q.isLoading)) return st("loading", "Loading…");
     const n = qs.reduce((s, q) => s + (q.data?.length ?? 0), 0);
