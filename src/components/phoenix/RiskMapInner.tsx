@@ -114,7 +114,7 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
             </Popup>
           );
           return subs.map(([la, lo], k) => (
-            <Rectangle key={`${p.lat},${p.lon},${i},${k}`} bounds={[[la - sd / 2, lo - sd / 2], [la + sd / 2, lo + sd / 2]]} pathOptions={{ stroke: false, fillColor: c, fillOpacity: 0.6 }}>{pop}</Rectangle>
+            <Rectangle key={`${p.lat},${p.lon},${i},${k}`} bounds={[[la - sd / 2, lo - sd / 2], [la + sd / 2, lo + sd / 2]]} pathOptions={{ stroke: true, weight: 1, color: c, opacity: 0.6, fillColor: c, fillOpacity: 0.6 }}>{pop}</Rectangle>
           ));
         })}
         {locations.map((l) => {
