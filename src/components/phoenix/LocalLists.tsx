@@ -3,6 +3,7 @@ import { useSafeLocations, useSafePlaces, usePower, useAlerts, useFireReports, u
 import { scopeBbox } from "@/data/registry";
 import { getAvailability } from "@/data/sources";
 import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type LocationType, type SafeLocation } from "@/data/locations";
+import { apiBaseUrl } from "@/services/api/client";
 import { ApiState, LiveBadge, Note } from "./ApiState";
 import { AlertCard, Section } from "./ui";
 
@@ -120,8 +121,9 @@ export function ReportList({ countryCode, regionId }: Scope) {
 export function AlertList({ countryCode, regionId }: Scope) {
   const q = useAlerts({ country: countryCode, region: regionId });
   return (
-    <Section title="Alerts" right={<LiveBadge />}>
-      <ApiState q={q} empty="No active alerts">{(list) => <div className="space-y-2">{list.map((a) => <AlertCard key={a.id} a={a} />)}</div>}</ApiState>
+    <Section title="Alerts" right={<LiveBadge label="Daily update" />}>
+      {!apiBaseUrl() && <p className="mb-2 text-xs text-muted-foreground">Model and satellite alerts for the tested study areas, updated daily. Not official warnings.</p>}
+      <ApiState q={q} empty="No active alerts for this area" allowStatic>{(list) => <div className="space-y-2">{list.map((a) => <AlertCard key={a.id} a={a} />)}</div>}</ApiState>
     </Section>
   );
 }

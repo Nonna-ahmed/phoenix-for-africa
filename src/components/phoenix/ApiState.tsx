@@ -4,10 +4,10 @@ import { ApiHttpError, ApiNotConfiguredError, apiBaseUrl } from "@/services/api/
 interface Q<T> { data?: T | undefined; isLoading: boolean; isError: boolean; error: unknown; refetch: () => unknown }
 
 /** Loading / success / empty / error / not-configured states for API data. */
-export function ApiState<T>({ q, empty = "No data available for the selected area.", isEmpty, children }: {
-  q: Q<T>; empty?: ReactNode; isEmpty?: (d: T) => boolean; children: (d: T) => ReactNode;
+export function ApiState<T>({ q, empty = "No data available for the selected area.", isEmpty, allowStatic, children }: {
+  q: Q<T>; empty?: ReactNode; isEmpty?: (d: T) => boolean; allowStatic?: boolean; children: (d: T) => ReactNode;
 }) {
-  if (!apiBaseUrl()) return <Note tone="muted">Backend not connected — set VITE_API_BASE_URL to load live PHOENIX data.</Note>;
+  if (!apiBaseUrl() && !allowStatic) return <Note tone="muted">Backend not connected — set VITE_API_BASE_URL to load live PHOENIX data.</Note>;
   if (q.isLoading) return <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground"><span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />Loading live data…</div>;
   if (q.isError) {
     const e = q.error;

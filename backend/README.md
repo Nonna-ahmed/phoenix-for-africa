@@ -37,7 +37,8 @@ REGION=gh-north python backend/build_dataset.py   # fire + weather arrays -> dat
 REGION=gh-north python backend/train.py           # tests every candidate, keeps one, writes results-gh-north.json
 REGION=gh-north python backend/predict.py         # writes public/data/risk-gh-north.json
 python backend/manifest.py                        # writes public/data/regions-manifest.json
-python backend/refresh.py                         # what the daily job runs: all regions + hotspots + publish check
+python backend/alerts.py                          # writes public/data/alerts.json (risk + detection alerts from the files above)
+python backend/refresh.py                         # what the daily job runs: all regions + hotspots + alerts + publish check
 ```
 
 ## How the model for a region is chosen

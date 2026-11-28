@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCard, PageHeader } from "@/components/phoenix/ui";
 import { ApiState } from "@/components/phoenix/ApiState";
+import { apiBaseUrl } from "@/services/api/client";
 import { useAlerts } from "@/services/api/hooks";
 
 export const Route = createFileRoute("/alerts")({
@@ -15,8 +16,8 @@ function Alerts() {
   const q = useAlerts();
   return (
     <div>
-      <PageHeader eyebrow="Africa → Country → Region" title="Alerts">Risk alerts (model-based) and detection alerts (satellite) are kept separate.</PageHeader>
-      <ApiState q={q} empty="No active alerts">{(all) => (
+      <PageHeader eyebrow="Africa → Country → Region" title="Alerts">Risk alerts (model-based) and detection alerts (satellite) are kept separate.{!apiBaseUrl() && " Covering the tested study areas, updated daily. Not official warnings."}</PageHeader>
+      <ApiState q={q} empty="No active alerts in the tested study areas" allowStatic>{(all) => (
         <div className="grid gap-6 md:grid-cols-2">
           <div><h2 className="mb-2 font-mono text-sm text-risk-high">▲ Predicted risk alerts</h2><div className="space-y-2">{all.filter((a) => a.kind === "risk").map((a) => <AlertCard key={a.id} a={a} />)}</div></div>
           <div><h2 className="mb-2 font-mono text-sm text-fire">◉ Satellite detection alerts</h2><div className="space-y-2">{all.filter((a) => a.kind === "detection").map((a) => <AlertCard key={a.id} a={a} />)}</div></div>
