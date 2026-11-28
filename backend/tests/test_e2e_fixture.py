@@ -8,8 +8,9 @@ BE = os.path.join(os.path.dirname(__file__), '..')
 def make_fixture(root):
     rng = np.random.RandomState(3)
     cfg = {'fx': {'label': 'Synthetic fixture', 'bbox_WSEN': [20, -10, 26, -4], 'cell_deg': 0.5, 'train_years': [2020, 2021], 'val_year': 2022, 'test_year': 2023,
-                  'status': 'experimental', 'validated': False, 'output': 'public/data/risk-fx.json', 'model': 'backend/model-fx.txt', 'results': 'backend/results-fx.json'}}
-    os.makedirs(root / 'raw'); os.makedirs(root / 'data/pchunks'); os.makedirs(root / 'public/data'); os.makedirs(root / 'backend')
+                  'status': 'experimental', 'validated': False, 'firms_country_archive': 'n20', 'firms_realtime_region': 'Southern_Africa',
+                  'output': 'public/data/risk-fx.json', 'model': 'backend/model-fx.txt', 'results': 'backend/results-fx.json'}}
+    os.makedirs(root / 'data/raw'); os.makedirs(root / 'data/power/fx'); os.makedirs(root / 'public/data'); os.makedirs(root / 'backend')
     json.dump(cfg, open(root / 'regions.json', 'w'))
     days = pd.date_range('2019-12-01', '2023-12-31'); lats = np.arange(-9.75, -4, .5); lons = np.arange(20.25, 26, .5)
     rows = []; w = {}
@@ -25,8 +26,8 @@ def make_fixture(root):
         p = np.clip((60 - rh) / 120, 0, .5) * (1 + (la > -7)); hit = rng.rand(len(days)) < p
         for d, h in zip(days, hit):
             if h and d.year >= 2020: fires[d.year].append((la + rng.uniform(-.2, .2), lo + rng.uniform(-.2, .2), d.strftime('%Y-%m-%d'), 'n', 0))
-        pd.DataFrame({'date': days.strftime('%Y%m%d'), 'T2M_MAX': tmax, 'T2M_MIN': tmin, 'PRECTOTCORR': rain, 'WS2M': ws, 'RH2M': rh, 'wlat': la, 'wlon': lo}).to_csv(root / f'data/pchunks/{la}_{lo}.csv', index=False)
-    for y, r in fires.items(): pd.DataFrame(r, columns=['latitude', 'longitude', 'acq_date', 'confidence', 'type']).to_csv(root / f'raw/n20_{y}.csv', index=False)
+        pd.DataFrame({'date': days.strftime('%Y%m%d'), 'T2M_MAX': tmax, 'T2M_MIN': tmin, 'PRECTOTCORR': rain, 'WS2M': ws, 'RH2M': rh, 'wlat': la, 'wlon': lo}).to_csv(root / f'data/power/fx/{la}_{lo}.csv', index=False)
+    for y, r in fires.items(): pd.DataFrame(r, columns=['latitude', 'longitude', 'acq_date', 'confidence', 'type']).to_csv(root / f'data/raw/n20_{y}.csv', index=False)
     return w, days
 
 @pytest.fixture(scope='module')
@@ -67,11 +68,11 @@ def test_train_outputs_and_manifest_gate(fx, monkeypatch):
     risk = json.load(open(root / 'public/data/risk-fx.json'))
     assert risk['date'] == today and risk['region_id'] == 'fx' and len(risk['cells']) == 144 and risk['model_sha256'] == res['model_sha256']
     assert all(0 <= c['probability'] <= 1 for c in risk['cells'])
-    ty = res['footprint']['test']; m = res[f'no_coords|held_out_areas_{ty}']['pr_auc']
+    ty = res['footprint']['test']; sel = res['selected_model']; m = res[f'{sel}|held_out_areas_{ty}']['pr_auc']
     beats = all(m > res[f'{b}|held_out_areas_{ty}']['pr_auc'] for b in ('persistence_fire7', 'persistence_fire1', 'climatology_doy'))
     assert manifest.validate('fx')['ok'] == beats      # gate follows the measured results, not file existence
     # make results fail on purpose -> gate must close
-    bad = dict(res); bad[f'no_coords|held_out_areas_{ty}'] = dict(res[f'no_coords|held_out_areas_{ty}'], pr_auc=0.0)
+    bad = dict(res); bad[f'{sel}|held_out_areas_{ty}'] = dict(res[f'{sel}|held_out_areas_{ty}'], pr_auc=0.0)
     json.dump(bad, open(root / 'backend/results-fx.json', 'w')); assert not manifest.validate('fx')['ok']
     # results for a different model -> gate must close even if numbers are good
     good = dict(res, model_sha256='0' * 64); json.dump(good, open(root / 'backend/results-fx.json', 'w'))

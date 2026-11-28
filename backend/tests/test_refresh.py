@@ -17,15 +17,17 @@ def test_baseline_copies_live_and_flags_need(root):
     import refresh
     live_doc = dict(risk(root), date='2026-11-20')
     live = refresh.baseline('http://x', '2026-11-25', fetch=lambda u: live_doc)
-    assert live == {'haut-katanga': '2026-11-20'} and risk(root)['date'] == '2026-11-20'
-    assert refresh.need_risk(live, '2026-11-25') == {'haut-katanga': True}
-    assert refresh.need_risk({'haut-katanga': '2026-11-25'}, '2026-11-25') == {'haut-katanga': False}
+    assert live['haut-katanga'] == '2026-11-20' and all(v is None for k, v in live.items() if k != 'haut-katanga')
+    assert risk(root)['date'] == '2026-11-20'
+    assert refresh.need_risk(live, '2026-11-25') == {rid: True for rid in live}
+    assert refresh.need_risk({rid: '2026-11-25' for rid in live}, '2026-11-25') == {rid: False for rid in live}
 
 def test_baseline_ignores_bad_live(root):
     import refresh
     before = risk(root)['date']
-    assert refresh.baseline('http://x', 't', fetch=lambda u: None) == {'haut-katanga': None}
-    assert refresh.baseline('http://x', 't', fetch=lambda u: {'date': '2030-01-01', 'cells': []}) == {'haut-katanga': None}
+    import region as RG
+    assert refresh.baseline('http://x', 't', fetch=lambda u: None) == {rid: None for rid in RG.load_config()}
+    assert refresh.baseline('http://x', 't', fetch=lambda u: {'date': '2030-01-01', 'cells': []}) == {rid: None for rid in RG.load_config()}
     assert risk(root)['date'] == before
 
 def test_failed_predict_keeps_previous_output(root):
@@ -39,6 +41,7 @@ def _fresh_hotspots(root, hours=0):
     for f in ('southern-africa', 'northern-central-africa'):
         p = root / f'public/data/hotspots-{f}.json'; d = json.load(open(p)); d['fetchedAt'] = t; d['status'] = 'ok'; json.dump(d, open(p, 'w'))
     subprocess.run([sys.executable, str(root / 'backend/manifest.py')], check=True, env=os.environ)
+    subprocess.run([sys.executable, str(root / 'backend/alerts.py')], check=True, env=os.environ)
 
 def test_publish_check_passes_then_refuses_downgrade_and_stale_hotspots(root):
     import refresh
@@ -60,8 +63,10 @@ def test_manifest_refuses_mismatched_model_or_failing_results(root):
     import manifest
     assert manifest.validate('haut-katanga')['ok']
     res = json.load(open(root / 'backend/results.json'))
-    res['no_coords|held_out_areas_2025']['pr_auc'] = 0.5; json.dump(res, open(root / 'backend/results.json', 'w'))
+    sel_key = f"{res.get('selected_model')}|held_out_areas_2025"
+    good_pr_auc = res[sel_key]['pr_auc']
+    res[sel_key]['pr_auc'] = 0.5; json.dump(res, open(root / 'backend/results.json', 'w'))
     v = manifest.validate('haut-katanga'); assert not v['ok'] and any('baselines' in r for r in v['reasons'])
-    res['no_coords|held_out_areas_2025']['pr_auc'] = 0.9183; res['model_sha256'] = 'bad'; json.dump(res, open(root / 'backend/results.json', 'w'))
+    res[sel_key]['pr_auc'] = good_pr_auc; res['model_sha256'] = 'bad'; json.dump(res, open(root / 'backend/results.json', 'w'))
     assert any('different' in r or 'does not match' in r for r in manifest.validate('haut-katanga')['reasons'])
     os.remove(root / 'backend/results.json'); assert not manifest.validate('haut-katanga')['ok']

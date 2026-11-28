@@ -45,6 +45,13 @@ def publish_check(live, today, now=None):
             t = dt.datetime.fromisoformat(str(g.get('fetchedAt', '')).replace('Z', '+00:00'))
             if (now - t).total_seconds() > 36 * 3600: errs.append(f'{f} older than 36 h')
         except Exception: errs.append(f'{f} missing or unreadable')
+    p = os.path.join(RG.ROOT, 'public', 'data', 'alerts.json')
+    try:
+        g = json.load(open(p))
+        if g.get('status') != 'ok': errs.append('alerts.json status not ok')
+        t = dt.datetime.fromisoformat(str(g.get('generated_utc', '')).replace('Z', '+00:00'))
+        if (now - t).total_seconds() > 36 * 3600: errs.append('alerts.json older than 36 h')
+    except Exception: errs.append('alerts.json missing or unreadable')
     mp = os.path.join(RG.ROOT, 'public', 'data', 'regions-manifest.json')
     try:
         have = {r['id']: r['estimates_available'] for r in json.load(open(mp))['regions']}
@@ -60,6 +67,7 @@ def main():
         if need: print(rid, 'risk updated' if run_region(rid) else '::notice::risk not ready, previous output kept (labelled with own date)')
     if subprocess.run([sys.executable, os.path.join(RG.HERE, 'hotspots.py')]).returncode: print('::warning::hotspot refresh failed')
     subprocess.run([sys.executable, os.path.join(RG.HERE, 'manifest.py')], check=True)
+    if subprocess.run([sys.executable, os.path.join(RG.HERE, 'alerts.py')]).returncode: print('::warning::alerts build failed')
     errs = publish_check(live, today)
     # recheck the live date right before deploy: a newer run may have published meanwhile
     after = baseline_dates(site)
