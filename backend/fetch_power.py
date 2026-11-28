@@ -1,23 +1,53 @@
-"""Download NASA POWER daily weather (free, keyless) on a coarse grid inside the region from backend/regions.json.
-REGION=haut-katanga python backend/fetch_power.py   (re-run until it prints done; it has a time budget per run)"""
-import json, time, os, sys, urllib.request, numpy as np, pandas as pd, glob
+"""Download NASA POWER daily weather (free, keyless) on the coarse grid inside a region from
+backend/regions.json, into data/power/<region>/<lat>_<lon>.csv. Resumable; each run stops after a
+short time budget, so re-run until it prints done.  REGION=gh-north python backend/fetch_power.py"""
+import json, os, sys, time, urllib.request
+from concurrent.futures import ThreadPoolExecutor
+import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from region import get_region
-R = get_region(); G = R.get('power_grid_deg', 0.5)
-lons = np.arange(np.ceil(R['W'] / G) * G, R['E'] + 0.01, G); lats = np.arange(R['S'] + G / 2, R['N'], G)
-pts = [(round(a, 2), round(o, 2)) for a in lats for o in lons]
-y0 = min(R['train_years']) - 1
-os.makedirs('data/pchunks', exist_ok=True); T0 = time.time()
+import region as RG
+
 P = "T2M_MAX,T2M_MIN,PRECTOTCORR,WS2M,RH2M"
-for a, o in pts:
-    fn = f'data/pchunks/{a}_{o}.csv'
-    if os.path.exists(fn): continue
-    if time.time() - T0 > 90: print('budget, rerun'); sys.exit(0)
-    url = f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters={P}&community=AG&longitude={o}&latitude={a}&start={y0}1201&end={R['test_year']}1231&format=JSON"
+
+def points(R):
+    G = R.get('power_grid_deg', 0.5)
+    lons = np.arange(np.ceil(R['W'] / G) * G, R['E'] + 0.01, G); lats = np.arange(R['S'] + G / 2, R['N'], G)
+    return [(round(float(a), 2), round(float(o), 2)) for a in lats for o in lons]
+
+def fetch_one(args):
+    rid, a, o, y0, y1 = args
+    d = os.path.join(RG.ROOT, 'data', 'power', rid); os.makedirs(d, exist_ok=True)
+    fn = os.path.join(d, f'{a}_{o}.csv')
+    if os.path.exists(fn) and os.path.getsize(fn) > 500: return 'skip'
+    url = (f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters={P}&community=AG"
+           f"&longitude={o}&latitude={a}&start={y0}1201&end={y1}1231&format=JSON")
     for k in range(4):
-        try: d = json.load(urllib.request.urlopen(url, timeout=60)); break
-        except Exception as e: print('retry', a, o, e); time.sleep(8)
-    else: sys.exit('fail')
-    df = pd.DataFrame(d['properties']['parameter']); df.index.name = 'date'; df = df.reset_index(); df['wlat'] = a; df['wlon'] = o
-    df.to_csv(fn, index=False)
-print('done', len(glob.glob('data/pchunks/*.csv')), len(pts))
+        try:
+            doc = json.load(urllib.request.urlopen(url, timeout=90))
+            df = pd.DataFrame(doc['properties']['parameter']); df.index.name = 'date'; df = df.reset_index()
+            df['wlat'] = a; df['wlon'] = o
+            tmp = fn + '.part'; df.to_csv(tmp, index=False); os.replace(tmp, fn)
+            return 'ok'
+        except Exception as e:
+            print('retry', a, o, e); time.sleep(3 * (k + 1))
+    return 'FAILED %s %s %s' % (rid, a, o)
+
+def run(rid, budget=80):
+    R = RG.get_region(rid); y0 = min(R['train_years']) - 1; y1 = max(R['test_year'], R['val_year'])
+    todo = [(rid, a, o, y0, y1) for a, o in points(R)]
+    T0 = time.time(); done = 0
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        for r in ex.map(fetch_one, todo):
+            if r == 'ok': done += 1
+            if r.startswith('FAILED'): print(r)
+            if time.time() - T0 > budget: break
+    left = sum(1 for a, o in points(R) if not os.path.exists(os.path.join(RG.ROOT, 'data', 'power', rid, f'{a}_{o}.csv')))
+    print(f'{rid}: {len(todo)} points, {left} left')
+    return left
+
+if __name__ == '__main__':
+    only = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('REGION')
+    rids = [only] if only else list(RG.load_config())
+    left = 0
+    for rid in rids: left += run(rid)
+    print('done' if left == 0 else 'budget reached, rerun')

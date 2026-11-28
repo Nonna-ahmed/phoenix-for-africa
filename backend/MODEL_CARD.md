@@ -1,5 +1,7 @@
 # Model card: Haut-Katanga daily satellite-detection risk (EXPERIMENTAL pilot)
 
+> **Update 2026-11-28.** The pilot was retrained with the same test now used for the other twelve study areas: five model families and three baselines, 1-degree blocks held out, test year 2025. A weather-free logistic regression scored as well as the LightGBM that used NASA POWER weather (held-out PR-AUC 0.9154 vs 0.9176), so the pilot now ships the weather-free model and no longer depends on late weather data. The numbers below describe the earlier LightGBM run and are kept for comparison; the current per-model table is in backend/results.json and on the site Models page.
+
 ## What it predicts
 Probability that NASA VIIRS (NOAA-20, 375 m) detects at least one nominal/high-confidence fire pixel in a 0.25 degree cell (about 28 km) on a given UTC day. It is **not** a forecast of confirmed or burning fires. A day with no detection includes days the satellite could not see the ground (cloud) and days with no fire; the open data used here has no cloud mask, so the two cannot be separated.
 
