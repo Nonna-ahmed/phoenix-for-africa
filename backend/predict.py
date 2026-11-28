@@ -6,6 +6,7 @@ import io, json, sys, time, datetime as dt, urllib.request
 import numpy as np, pandas as pd, lightgbm as lgb
 sys.path.insert(0, __file__.rsplit('/', 1)[0] if '/' in __file__ else '.')
 from features import build_features, BASE, W0, S0, STEP, BBOX
+from region import get_region
 
 FIRMS = "https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-20-viirs-c2/{r}/J1_VIIRS_C2_{r}_7d.csv"
 REGIONS = ["Southern_Africa", "Northern_and_Central_Africa"]
@@ -20,9 +21,10 @@ def get(url, tries=4):
         except Exception as e: print('retry', url[:80], e, file=sys.stderr); time.sleep(5 * (k + 1))
     raise RuntimeError('download failed: ' + url)
 
-def main(today=None, out='public/data/risk-haut-katanga.json', model=None):
-    import os
-    model = model or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model.txt')
+def main(today=None, out=None, model=None):
+    R = get_region(); out = out or R['output_path']
+    import os, hashlib
+    model = model or R['model_path']
     D = pd.Timestamp(today or dt.datetime.utcnow().date())
     days = pd.date_range(D - pd.Timedelta(days=109), D)   # 110-day window ending on the target day
     T = len(days); di = {d: i for i, d in enumerate(days)}
@@ -37,7 +39,7 @@ def main(today=None, out='public/data/risk-haut-katanga.json', model=None):
             if d in di:
                 A[di[d], int((row.longitude - W) // STEP), int((row.latitude - S) // STEP)] = 1; seen_dates.add(d.date().isoformat()); n_det += 1
     # --- weather (NASA POWER 0.5 deg grid points)
-    wl = np.arange(25.0, 29.01, 0.5); wa = np.arange(-12.75, -8.2, 0.5)
+    wl = np.arange(np.ceil(W * 2) / 2, E + 0.01, 0.5); wa = np.arange(S + 0.25, N, 0.5)   # 0.5 deg POWER grid points inside the region
     arr = {v: np.full((T, len(wa), len(wl)), np.nan, np.float32) for v in ['T2M_MAX', 'T2M_MIN', 'PRECTOTCORR', 'WS2M', 'RH2M']}
     for j, a in enumerate(wa):
         for i, o in enumerate(wl):
@@ -65,11 +67,11 @@ def main(today=None, out='public/data/risk-haut-katanga.json', model=None):
                           'date': D.date().isoformat(), 'cell_size_deg': STEP})
     last_fire = max(seen_dates) if seen_dates else None
     doc = {'experimental': True, 'product': 'Daily satellite-detection risk (probability that VIIRS detects at least one nominal/high-confidence fire pixel in the cell on this UTC day)',
-           'not_a_confirmed_fire_forecast': True, 'region': 'Haut-Katanga pilot footprint (bounding box, not an administrative boundary)',
+           'not_a_confirmed_fire_forecast': True, 'region_id': R['id'], 'region': R['label'], 'model_sha256': hashlib.sha256(open(model, 'rb').read()).hexdigest(),
            'bbox_WSEN': list(BBOX), 'cell_deg': STEP, 'date': D.date().isoformat(), 'generated_utc': dt.datetime.utcnow().isoformat(timespec='seconds') + 'Z',
            'inputs': {'fire_source': 'NASA FIRMS NOAA-20 VIIRS NRT (regional CSV, last 7 days)', 'fire_detections_in_footprint_last_7d': n_det,
                       'latest_fire_date_seen': last_fire, 'weather_source': 'NASA POWER daily (0.5 deg), used with a 3-day lag'},
-           'model': 'LightGBM, trained on 2020-2023 NOAA-20 VIIRS detections; see MODEL_CARD.md for 2025 held-out results',
+           'model': f"LightGBM, trained on {min(R['train_years'])}-{max(R['train_years'])} NOAA-20 VIIRS detections; held-out results for {R['test_year']} in the region results file",
            'cells': cells}
     import os; os.makedirs(os.path.dirname(out), exist_ok=True); json.dump(doc, open(out, 'w'))
     print('wrote', out, 'cells', len(cells), 'detections_7d', n_det, 'mean p', round(float(p.mean()), 3), 'max', round(float(p.max()), 3))

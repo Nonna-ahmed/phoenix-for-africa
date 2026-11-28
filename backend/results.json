@@ -286,5 +286,26 @@
   "val": "2024",
   "test": "2025",
   "weather_lag_days": 3
- }
+ },
+ "region": "haut-katanga",
+ "model_sha256": "e3f6c66c98459aa503d50f9653970ea8af6de8e12499d66ee4bb976f7909eca6",
+ "features": [
+  "doy_sin",
+  "doy_cos",
+  "tmax",
+  "tmin",
+  "wind",
+  "rh",
+  "rain7",
+  "rain30",
+  "rain90",
+  "tmax7",
+  "rh7",
+  "days_since_rain",
+  "fire1",
+  "fire3",
+  "fire7",
+  "nb_fire7",
+  "days_since_fire"
+ ]
 }

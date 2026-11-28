@@ -1,0 +1,21 @@
+{
+ "regions": [
+  {
+   "id": "haut-katanga",
+   "label": "Haut-Katanga pilot (rectangle, not an admin boundary; includes part of Zambia)",
+   "bbox_WSEN": [
+    24.8,
+    -13.0,
+    29.0,
+    -8.2
+   ],
+   "cell_deg": 0.25,
+   "status": "experimental",
+   "validated": false,
+   "risk_file": "/data/risk-haut-katanga.json",
+   "risk_date": "2026-11-25",
+   "estimates_available": true,
+   "reasons": []
+  }
+ ]
+}

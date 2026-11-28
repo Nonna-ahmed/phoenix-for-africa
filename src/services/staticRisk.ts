@@ -14,7 +14,19 @@ export function staticCovers(a: AreaQuery | null | undefined): boolean {
 
 interface StaticCell { lat: number; lon: number; probability: number; risk_level: string; date: string }
 
+export const MANIFEST_URL = "/data/regions-manifest.json";
+
+/** Estimates are shown only if the build-time validation (backend/manifest.py) says so for this region. */
+export async function assertEstimatesAvailable(signal?: AbortSignal, regionId = "haut-katanga"): Promise<void> {
+  const r = await fetch(MANIFEST_URL, { signal: signal ?? null, headers: { Accept: "application/json" } });
+  if (!r.ok) throw new Error(`No validation manifest (HTTP ${r.status}): estimates unavailable`);
+  const m = (await r.json()) as { regions?: { id: string; estimates_available?: boolean; reasons?: string[] }[] };
+  const e = m.regions?.find((x) => x.id === regionId);
+  if (!e || e.estimates_available !== true) throw new Error(`Estimates not validated for ${regionId}: ${(e?.reasons ?? ["not in manifest"]).join("; ")}`);
+}
+
 export async function loadStaticRisk(signal?: AbortSignal, now: Date = new Date()): Promise<RiskPoint[]> {
+  await assertEstimatesAvailable(signal);
   const res = await fetch(STATIC_RISK_URL, { signal: signal ?? null, headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`HTTP ${res.status} on ${STATIC_RISK_URL}`);
   const doc = (await res.json()) as { cells?: StaticCell[]; date?: string; generated_utc?: string };

@@ -1,8 +1,10 @@
 import glob, numpy as np, pandas as pd
-W,S,E,N = 24.8,-13.0,29.0,-8.2; STEP=0.25
+from region import get_region
+_R=get_region(); W,S,E,N,STEP = _R['W'],_R['S'],_R['E'],_R['N'],_R['step']
 # --- fire labels (FIRMS VIIRS S-NPP, nominal/high confidence), per 0.25 deg cell per UTC day
 fr=[]
-for y in range(2020,2026):
+_Y=_R['train_years']+[_R['val_year'],_R['test_year']]
+for y in range(min(_Y),max(_Y)+1):
     df=pd.read_csv(f'raw/n20_{y}.csv',usecols=['latitude','longitude','acq_date','confidence','type'])
     df=df[(df.longitude>=W)&(df.longitude<E)&(df.latitude>=S)&(df.latitude<N)]
     fr.append(df)
@@ -11,7 +13,7 @@ f=f[f.confidence.isin(['n','h'])&(f.type==0)]
 f['ci']=np.floor((f.longitude-W)/STEP).astype(int); f['cj']=np.floor((f.latitude-S)/STEP).astype(int)
 cnt=f.groupby(['ci','cj','acq_date']).size().rename('n').reset_index(); cnt['acq_date']=pd.to_datetime(cnt.acq_date)
 nI=int(np.ceil((E-W)/STEP)); nJ=int(np.ceil((N-S)/STEP))
-days=pd.date_range('2019-12-01','2025-12-31')
+days=pd.date_range(f'{min(_Y)-1}-12-01',f'{max(_Y)}-12-31')
 A=np.zeros((len(days),nI,nJ),dtype=np.float32)
 di={d:i for i,d in enumerate(days)}
 for r in cnt.itertuples(): A[di[r.acq_date],r.ci,r.cj]=r.n

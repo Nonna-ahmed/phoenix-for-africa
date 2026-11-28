@@ -1,21 +1,43 @@
 name: daily-risk
+# Ships static risk + hotspot files by deploying the built site. It does NOT commit data to main (no history growth).
+#  - Risk: attempted hourly 00:30-05:30 UTC. Today's file needs NASA POWER day D-3; predict.py refuses to write
+#    before it is published, and the next attempt retries. A risk file already for today's UTC day is not recomputed.
+#  - Hotspots: refreshed on EVERY run (also every 3 h later in the day), independent of the risk date.
+#  - Every run starts from the live site's current risk file, so a hotspot-only deploy never replaces fresh risk with the
+#    old seed file, and a failed weather fetch keeps the previous output (which the site labels by its own date and shows
+#    as stale/unavailable, never as today's).
 on:
-  schedule: [{ cron: "17 5 * * *" }]
+  schedule:
+    - cron: "30 0-5 * * *"
+    - cron: "15 6-23/3 * * *"
   workflow_dispatch: {}
-permissions: { contents: write }
+permissions: { contents: read }
+concurrency: { group: daily-risk, cancel-in-progress: false }
 jobs:
-  predict:
+  refresh:
     runs-on: ubuntu-latest
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SITE_URL: ${{ vars.SITE_URL }}   # empty = dry run (build + artifact only)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11", cache: pip, cache-dependency-path: backend/requirements.txt }
       - run: pip install -r backend/requirements.txt
-      - run: python backend/predict.py
-        working-directory: .
-        env: { PYTHONUNBUFFERED: "1" }
-      - run: python backend/hotspots.py
-      - run: |
-          git config user.name "phoenix-bot"; git config user.email "bot@users.noreply.github.com"
-          git add public/data/risk-haut-katanga.json public/data/hotspots-southern-africa.json
-          if ! git diff --cached --quiet; then git commit -m "Daily risk update" && git push; fi
+      - name: Refresh all regions (live baseline, risk if not today, hotspots always, manifest, publish check)
+        id: refresh
+        run: python backend/refresh.py   # exits non-zero (no deploy) if a risk date would go backwards, hotspots are stale or the manifest disagrees
+      - uses: oven-sh/setup-bun@v2
+      - name: Build site with the current data
+        run: bun install --frozen-lockfile && bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-${{ github.run_id }}
+          path: .output/public
+          retention-days: 3
+      - name: Deploy to Cloudflare (only when the token secret exists)
+        if: env.CF_TOKEN != '' && steps.refresh.outputs.publish == 'yes'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy -c .output/server/wrangler.json

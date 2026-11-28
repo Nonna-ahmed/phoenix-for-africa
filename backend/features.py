@@ -2,8 +2,10 @@
 import numpy as np
 
 WL = 3          # weather publication lag in days (NASA POWER), as in the repo pipeline
-W0, S0, STEP = 24.8, -13.0, 0.25
-BBOX = (24.8, -13.0, 29.0, -8.2)  # W, S, E, N  (Haut-Katanga pilot footprint, NOT an admin boundary)
+from region import get_region
+_R = get_region()  # REGION env var, default haut-katanga
+W0, S0, STEP = _R['W'], _R['S'], _R['step']
+BBOX = (_R['W'], _R['S'], _R['E'], _R['N'])  # W, S, E, N (from regions.json)
 BASE = ['doy_sin','doy_cos','tmax','tmin','wind','rh','rain7','rain30','rain90','tmax7','rh7',
         'days_since_rain','fire1','fire3','fire7','nb_fire7','days_since_fire']
 
