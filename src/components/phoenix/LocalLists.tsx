@@ -38,29 +38,40 @@ export function DetectionList({ countryCode, regionId }: Scope) {
   );
 }
 
+const SHORT: Record<string, string> = { health: "Health facilities", schools: "Schools", community: "Community centres", worship: "Places of worship", shelters: "Mapped shelters", idp: "Displacement (IDP) sites", religious: "Places of worship", settlements: "Settlements" };
+
 export function ShelterList({ countryCode = "CD", regionId }: Scope) {
   const avail = getAvailability(countryCode);
   const locs = useSafeLocations(countryCode, scopeBbox(countryCode, regionId));
   const backend = useShelters(countryCode === "CD" ? { country: "CD", region: regionId } : null);
   const all = locs.data?.locations ?? [];
   const confirmed = all.filter(isConfirmedShelter);
-  const others = all.filter((l) => !isConfirmedShelter(l));
-  const byType = others.reduce<Record<string, number>>((m, l) => ((m[l.locationType] = (m[l.locationType] ?? 0) + 1), m), {});
+  const others = all.filter((l) => !isConfirmedShelter(l) && l.locationType !== "settlement");
+  const layers = locs.data?.layers ?? [];
+  const totals = layers.reduce<Record<string, number>>((m, l) => ((m[l.layerId] = l.count), m), {});
+  const chips = (avail?.layers ?? []).map((l) => ({ key: l.id, label: SHORT[l.id.replace(/^[a-z]+-/, "")] ?? TYPE_LABEL[l.locationType], sub: l.source.startsWith("GRID3") ? "GRID3" : "OSM", n: totals[l.id] })).filter((c) => c.n !== undefined);
+  // show a few of each kind instead of 60 of whichever type came first
+  const byLayer = new Map<string, SafeLocation[]>();
+  for (const l of others) { const k = l.sourceDataset; byLayer.set(k, [...(byLayer.get(k) ?? []), l]); }
+  const groups = [...byLayer.values()].map((v) => v.slice(0, 10));
+  const sample = Array.from({ length: 10 }, (_, i) => groups.flatMap((g) => (g[i] ? [g[i]] : []))).flat();
+  const hasGrid3 = (avail?.layers ?? []).some((l) => l.source.startsWith("GRID3"));
   return (
     <div className="space-y-4">
       <Section title="Emergency shelters (confirmed)">
-        {confirmed.length ? <LocList list={confirmed} /> : <Note tone="muted">No verified shelter data available{avail?.notes ? ` — ${avail.notes}` : "."}</Note>}
+        {confirmed.length ? <LocList list={confirmed} /> : <Note tone="muted">No official emergency-shelter list was found for this country. {avail?.notes ?? ""}</Note>}
         <p className="label-mono mt-2">Only official or humanitarian-verified sources count as confirmed shelters</p>
       </Section>
-      <Section title="Potential safe locations & infrastructure" right={locs.data && !locs.data.noSource ? <LiveBadge /> : undefined}>
-        <p className="mb-2 rounded-sm bg-muted p-2 text-xs text-muted-foreground">These come from GRID3, a trusted mapping source for settlements and facilities. They are <b>not</b> designated emergency shelters — check with local authorities before going to one.</p>
+      <Section title="Possible safe locations" right={locs.data && !locs.data.noSource ? <LiveBadge label={hasGrid3 ? "GRID3 + OpenStreetMap" : "OpenStreetMap"} /> : undefined}>
+        <p className="mb-2 rounded-sm bg-muted p-2 text-xs text-muted-foreground">Places that <b>could</b> help in an emergency, from {hasGrid3 ? "GRID3 (a trusted mapping source) and OpenStreetMap" : "OpenStreetMap, because GRID3 has no facility layers for this country"}. They are <b>not</b> designated emergency shelters. Check with local authorities before going to one.</p>
         {locs.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p>
           : locs.isError ? <Note tone="error">Unable to retrieve current data. Please try again.</Note>
           : locs.data?.noSource ? <Note tone="muted">Shelter data unavailable for this country.</Note>
           : (<>
-            <div className="mb-2 flex flex-wrap gap-2">{Object.entries(byType).map(([t, n]) => <span key={t} className="label-mono rounded-sm border px-2 py-1">{TYPE_LABEL[t as LocationType]}: {n}</span>)}</div>
-            {locs.data?.layers.map((l) => <p key={l.layerId} className="text-xs text-muted-foreground">{l.sourceDataset}: {l.status === "ok" ? `${l.count.toLocaleString()} in area, ${l.returned} loaded` : "unavailable"}{l.coverageNote ? ` · ${l.coverageNote}` : ""}</p>)}
-            <div className="mt-2"><LocList list={others.filter((l) => l.locationType !== "settlement").slice(0, 60)} /></div>
+            <div className="mb-2 flex flex-wrap gap-2">{chips.map((c) => <span key={c.key} className="label-mono rounded-sm border px-2 py-1">{c.label}: {c.n!.toLocaleString()} <span className="text-muted-foreground">({c.sub})</span></span>)}</div>
+            {layers.map((l) => <p key={l.layerId} className="text-xs text-muted-foreground">{l.sourceDataset}: {l.status === "ok" ? `${l.count.toLocaleString()} in area, ${l.returned} loaded` : "unavailable"}{l.coverageNote ? ` · ${l.coverageNote}` : ""}</p>)}
+            <div className="mt-2"><LocList list={sample} /></div>
+            <p className="label-mono mt-2">Showing up to 10 of each kind. Turn on the layers in the map above to see them all. Zero or low counts can mean the place is not mapped yet.</p>
           </>)}
       </Section>
       {countryCode === "CD" && (
@@ -87,7 +98,7 @@ function LocList({ list }: { list: SafeLocation[] }) {
       <li key={l.id} className="rounded-sm border-l-4 border-l-loc-health bg-background/40 p-2 text-sm">
         <div className="font-medium">{l.name ?? "Name unavailable"} <span className="label-mono">· {TYPE_LABEL[l.locationType]}</span></div>
         <div className="text-xs text-muted-foreground">{[l.region, l.district].filter(Boolean).join(" · ")} · {l.latitude.toFixed(3)}, {l.longitude.toFixed(3)}</div>
-        <div className="text-xs text-muted-foreground">Source: {l.sourceDataset} · {VERIFY_LABEL[l.verificationStatus]} · Capacity: {na(l.capacity)} · Last verified: {na(l.lastVerified)}</div>
+        <div className="text-xs text-muted-foreground">{l.notes ? `${l.notes} · ` : ""}{l.source} · {VERIFY_LABEL[l.verificationStatus]}</div>
       </li>))}</ul>
   );
 }

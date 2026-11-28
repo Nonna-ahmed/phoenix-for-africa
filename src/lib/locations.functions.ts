@@ -37,10 +37,11 @@ export const getSafeLocations = createServerFn({ method: "GET" })
     const env = data.bbox.join(",");
     const results = await Promise.all(layers.map(async (l) => {
       const q = `geometry=${env}&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects`;
+      const w = encodeURIComponent(l.where ?? "1=1");
       try {
         const [cRes, fRes] = await Promise.all([
-          fetch(`${l.url}/query?where=1%3D1&${q}&returnCountOnly=true&f=json`),
-          fetch(`${l.url}/query?where=1%3D1&${q}&outFields=*&returnGeometry=true&resultRecordCount=${PER_LAYER}&f=json`),
+          fetch(`${l.url}/query?where=${w}&${q}&returnCountOnly=true&f=json`),
+          fetch(`${l.url}/query?where=${w}&${q}&outFields=*&returnGeometry=true&resultRecordCount=${PER_LAYER}&f=json`),
         ]);
         if (!cRes.ok || !fRes.ok) throw new Error(`HTTP ${cRes.status}/${fRes.status}`);
         const count = ((await cRes.json()) as { count?: number }).count ?? 0;
@@ -52,15 +53,15 @@ export const getSafeLocations = createServerFn({ method: "GET" })
           if (!Number.isFinite(lat) || !Number.isFinite(lon)) return [];
           const sub = l.typeField ? s(a[l.typeField]) : null;
           return [{
-            id: `${l.id}-${s(a["grid3id"]) ?? s(a["OBJECTID"]) ?? i}`,
+            id: `${l.id}-${s(a["grid3id"]) ?? s(a["OBJECTID"]) ?? s(a["objectid"]) ?? i}`,
             name: s(a[l.nameField]), country: country.name, countryCode: country.code,
             region: l.regionField ? s(a[l.regionField]) : null, district: l.districtField ? s(a[l.districtField]) : null,
             latitude: lat, longitude: lon, locationType: l.locationType,
             isEmergencyShelter: false, // GRID3 is not a shelter registry
             capacity: null, source: l.source, sourceDataset: l.sourceDataset, sourceUrl: l.url,
             sourceDate: l.dateField ? dateStr(a[l.dateField]) : null, lastVerified: null,
-            verificationStatus: "trusted_geospatial_source", accessibility: null, contact: null,
-            notes: sub ? `Subtype: ${sub}` : null,
+            verificationStatus: l.verification ?? "trusted_geospatial_source", accessibility: null, contact: null,
+            notes: l.note ? l.note(a) : sub ? `Subtype: ${sub}` : null,
           }];
         });
         return { layer: { layerId: l.id, sourceDataset: l.sourceDataset, status: "ok" as const, count, returned: locs.length, ...(l.coverageNote ? { coverageNote: l.coverageNote } : {}) }, locs };

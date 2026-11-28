@@ -6,7 +6,7 @@ import type { LocationType } from "@/data/locations";
 
 export type LayerId =
   | "fires" | "risk" | "weather" | "soil" | "ndvi" | "landcover" | "terrain" | "population"
-  | "grid3_health" | "grid3_school" | "grid3_religious" | "grid3_settlement"
+  | "grid3_health" | "grid3_school" | "grid3_religious" | "grid3_settlement" | "grid3_safe"
   | "osm_hospitals" | "osm_roads"
   | "shelters_verified" | "safe_locations" | "reports";
 
@@ -34,12 +34,14 @@ export const LAYERS: LayerDef[] = [
     legend: [{ color: "--layer-terrain", label: "Elevation / slope (region point)", shape: "square" }] },
   { id: "population", icon: "👥", label: "Population", datasetIds: ["worldpop"], defaultOn: false,
     legend: [{ color: "--layer-pop", label: "Population estimate (region point)", shape: "square" }] },
-  { id: "grid3_health", icon: "🏥", label: "GRID3 Health Facilities", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "health_facility",
+  { id: "grid3_health", icon: "🏥", label: "Health Facilities (GRID3 / OSM)", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "health_facility",
     legend: [{ color: "--loc-health", label: "Health facility (not a shelter)", shape: "dot" }] },
-  { id: "grid3_school", icon: "🏫", label: "GRID3 Schools", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "school",
+  { id: "grid3_school", icon: "🏫", label: "Schools (GRID3 / OSM)", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "school",
     legend: [{ color: "--loc-school", label: "School (not a shelter)", shape: "dot" }] },
-  { id: "grid3_religious", icon: "🕌", label: "GRID3 Religious Centers", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "religious_center",
+  { id: "grid3_religious", icon: "🕌", label: "Places of Worship (GRID3 / OSM)", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "religious_center",
     legend: [{ color: "--loc-religious", label: "Religious center (not a shelter)", shape: "dot" }] },
+  { id: "grid3_safe", icon: "🛟", label: "Possible Safe Places & IDP Sites", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "potential_safe_location",
+    legend: [{ color: "--loc-safe", label: "Community centre, mapped shelter or displacement site (not confirmed shelters)", shape: "dot" }] },
   { id: "grid3_settlement", icon: "📍", label: "GRID3 Settlements", datasetIds: ["grid3-cod"], defaultOn: false, grid3Type: "settlement",
     legend: [{ color: "--loc-settlement", label: "Settlement", shape: "dot" }] },
   { id: "osm_hospitals", icon: "🏥", label: "OSM Hospitals & Clinics", datasetIds: ["osm-infra"], defaultOn: false,
@@ -48,7 +50,7 @@ export const LAYERS: LayerDef[] = [
     legend: [{ color: "--layer-road", label: "Motorway / trunk / primary / secondary — not approved evacuation routes", shape: "square" }] },
   { id: "shelters_verified", icon: "🚨", label: "Verified Emergency Shelters", datasetIds: ["shelters-official"], defaultOn: true,
     legend: [{ color: "--shelter", label: "Verified emergency shelter", shape: "diamond" }] },
-  { id: "safe_locations", icon: "📍", label: "Potential Safe Locations", datasetIds: [], sourceText: "PHOENIX backend — drc_katanga_shelters_final.csv (unverified)", defaultOn: true,
+  { id: "safe_locations", icon: "📍", label: "DRC shelter file (backend)", datasetIds: [], sourceText: "PHOENIX backend — drc_katanga_shelters_final.csv (unverified)", defaultOn: true,
     legend: [{ color: "--layer-safe", label: "Potential safe location (unverified)", shape: "dot" }] },
   { id: "reports", icon: "📣", label: "Fire Reports", datasetIds: [], sourceText: "PHOENIX backend — community fire reports", defaultOn: true,
     legend: [{ color: "--report", label: "Community report (unverified)", shape: "dot" }, { color: "--destructive", label: "Confirmed ground fire", shape: "square" }] },
