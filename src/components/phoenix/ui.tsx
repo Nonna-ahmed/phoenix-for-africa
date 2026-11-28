@@ -21,7 +21,7 @@ export function DataStatusGrid({ status }: { status: DataStatus }) {
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-5">
       {rows.map(([k, v]) => (
-        <div key={k}><div className="label-mono">{k}</div><div className={cn("text-sm capitalize", availStyle[v])}>● {v}</div></div>
+        <div key={k}><div className="label-mono">{k}</div><div className={cn("text-sm capitalize", availStyle[v])}>● {k === "Shelters" && v === "limited" ? "Possible places only" : v}</div></div>
       ))}
     </div>
   );

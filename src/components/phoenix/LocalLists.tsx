@@ -1,5 +1,5 @@
 import type { PowerParam } from "@/lib/power.functions";
-import { useSafeLocations, usePower, useAlerts, useFireReports, useFwi, useHotspots, useShelters } from "@/services/api/hooks";
+import { useSafeLocations, useSafePlaces, usePower, useAlerts, useFireReports, useFwi, useHotspots, useShelters } from "@/services/api/hooks";
 import { scopeBbox } from "@/data/registry";
 import { getAvailability } from "@/data/sources";
 import { isConfirmedShelter, TYPE_LABEL, VERIFY_LABEL, type LocationType, type SafeLocation } from "@/data/locations";
@@ -143,6 +143,29 @@ export function EnvPanel({ point }: { point?: [number, number] | undefined }) {
             <div key={k} className="rounded-sm bg-background/40 p-2"><div className="label-mono">{k}</div><div className="text-xs text-muted-foreground">{l}</div><div className="font-display text-xl">{f(d.latest!.values[k], u)}</div></div>))}</div>
           <p className="label-mono mt-2">Source: NASA POWER · {d.dataset} · day {d.latest.date} · point {d.lat}, {d.lon} · retrieved {d.retrievedAt.slice(0, 16).replace("T", " ")} UTC</p>
           <p className="mt-1 text-xs text-muted-foreground">NASA POWER publishes with a few days' delay; more recent days are missing (-999) and shown as Missing. Weather inputs only — this is not a risk prediction.</p>
+        </>)}
+    </Section>
+  );
+}
+
+/** Possible safe places from OpenStreetMap for any country. Never presented as designated emergency shelters. */
+export function SafePlacesPanel({ countryCode = "CD", regionId }: Scope) {
+  const q = useSafePlaces(scopeBbox(countryCode, regionId));
+  const d = q.data;
+  const shelters = d?.mappedShelters ?? [];
+  return (
+    <Section title="Shelters & possible safe places" right={d?.status === "ok" ? <LiveBadge label="OpenStreetMap" /> : undefined}>
+      <p className="mb-2 rounded-sm bg-muted p-2 text-xs text-muted-foreground">Open maps cannot tell us which places are official emergency shelters. These counts are places that <b>could</b> help people in an emergency. They are <b>not confirmed shelters</b>. Check with local authorities first.</p>
+      {q.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p>
+        : q.isError || !d || d.status === "error" ? <Note tone="error">{d?.message ?? "Unable to retrieve current data. Please try again."}</Note>
+        : d.status === "limited" ? <Note tone="muted">{d.message}</Note>
+        : (<>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{d.categories.map((c) => (
+            <div key={c.id} className="rounded-sm bg-background/40 p-2"><div className="text-xs text-muted-foreground">{c.label}</div>
+              <div className="font-display text-xl">{c.count === null ? <span className="text-unavailable">Unavailable</span> : c.count.toLocaleString()}</div></div>))}</div>
+          {shelters.length > 0 && <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto text-sm">{shelters.slice(0, 15).map((s) => (
+            <li key={s.id} className="rounded-sm bg-background/40 p-2">{s.name ?? "Unnamed"} <span className="text-xs text-muted-foreground">· {s.kind} · {s.lat.toFixed(3)}, {s.lon.toFixed(3)} · unverified</span></li>))}</ul>}
+          <p className="label-mono mt-2">Source: OpenStreetMap contributors (ODbL) · study area {countryCode} · retrieved {d.retrievedAt.slice(0, 16).replace("T", " ")} UTC · coverage varies by place, so zero does not mean none exist</p>
         </>)}
     </Section>
   );

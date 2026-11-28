@@ -1,3 +1,4 @@
+import { getOsmSafePlaces } from "@/lib/osm.functions";
 import { getSafeLocations } from "@/lib/locations.functions";
 import { getPowerDaily } from "@/lib/power.functions";
 import { getFirmsHotspots } from "@/lib/firms.functions";
@@ -64,4 +65,9 @@ export function useSafeLocations(countryCode: string | undefined, bbox: [number,
 /** Land cover, terrain, population exposure and soil moisture for a point (each source independent). */
 export function useSiteContext(point: [number, number] | undefined) {
   return useQuery({ ...opts, staleTime: 12 * 3600_000, queryKey: ["site", point], enabled: !!point, queryFn: () => getSiteContext({ data: { lat: point![0], lon: point![1] } }) });
+}
+
+/** Possible safe places (OSM) counts for a country study area. Not designated shelters. */
+export function useSafePlaces(bbox: [number, number, number, number] | undefined) {
+  return useQuery({ ...opts, staleTime: 6 * 3600_000, queryKey: ["safe-places", bbox], enabled: !!bbox, queryFn: () => getOsmSafePlaces({ data: { bbox: bbox! } }) });
 }

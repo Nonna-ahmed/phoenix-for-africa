@@ -98,3 +98,43 @@ export const getOsmRoads = createServerFn({ method: "GET" })
       }
     });
   });
+
+/**
+ * Counts of possible safe places (schools, health facilities, community centres, worship places, mapped shelters)
+ * from the same OSM replica. These are NOT designated emergency shelters: OSM does not say whether a place
+ * is approved or open during an emergency. Only amenity=shelter / social_facility=shelter rows are listed as "mapped shelters" (unverified).
+ */
+const BASE_URL = BASE;
+export interface SafePlaceCategory { id: string; label: string; count: number | null }
+export interface MappedShelter { id: string; name: string | null; kind: string; lat: number; lon: number }
+export interface SafePlacesResult extends Base { categories: SafePlaceCategory[]; mappedShelters: MappedShelter[] }
+
+const CATS: { id: string; label: string; service: string; where: string }[] = [
+  { id: "schools", label: "Schools and colleges", service: "OSM_AF_Educational", where: "amenity IN ('school','college','university')" },
+  { id: "health", label: "Hospitals and clinics", service: "OSM_AF_Medical", where: "amenity IN ('hospital','clinic')" },
+  { id: "community", label: "Community centres and town halls", service: "OSM_AF_Amenities", where: "amenity IN ('community_centre','townhall')" },
+  { id: "worship", label: "Places of worship", service: "OSM_AF_Amenities", where: "amenity = 'place_of_worship'" },
+  { id: "shelters", label: "Mapped shelters (unverified)", service: "OSM_AF_Amenities", where: "amenity IN ('shelter','social_facility')" },
+];
+
+export const getOsmSafePlaces = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => bboxIn.parse(d))
+  .handler(async ({ data }): Promise<SafePlacesResult> => {
+    const meta = { source: "OpenStreetMap contributors (via Esri live OSM replica)", dataset: "OSM Africa: educational, medical and amenity points", sourceUrl: `${BASE_URL}/OSM_AF_Amenities/FeatureServer/0`, retrievedAt: new Date().toISOString(), license: "ODbL" as const };
+    if (area(data.bbox) > 600) return { ...meta, status: "limited", message: "Select a country or region to load possible safe places.", total: 0, categories: [], mappedShelters: [] };
+    return cached(`s${data.bbox}`, async () => {
+      const geometry = data.bbox.join(",");
+      const categories: SafePlaceCategory[] = await Promise.all(CATS.map(async (c) => {
+        try { const j = await query(`${BASE_URL}/${c.service}/FeatureServer/0`, { where: c.where, geometry, returnCountOnly: "true" }); return { id: c.id, label: c.label, count: Number(j["count"]) }; }
+        catch (e) { console.error("osm safe places", c.id, e); return { id: c.id, label: c.label, count: null }; }
+      }));
+      let mappedShelters: MappedShelter[] = [];
+      try {
+        const j = await query(`${BASE_URL}/OSM_AF_Amenities/FeatureServer/0`, { where: CATS[4]!.where, geometry, outFields: "objectid,osm_id2,name,amenity", returnGeometry: "true", resultRecordCount: "40" });
+        const feats = (j["features"] as { attributes: Record<string, unknown>; geometry?: { x: number; y: number } }[] | undefined) ?? [];
+        mappedShelters = feats.flatMap((x): MappedShelter[] => x.geometry ? [{ id: `osm-${s(x.attributes["osm_id2"]) ?? s(x.attributes["objectid"])}`, name: s(x.attributes["name"]), kind: s(x.attributes["amenity"]) ?? "shelter", lat: x.geometry.y, lon: x.geometry.x }] : []);
+      } catch (e) { console.error("osm mapped shelters", e); }
+      const ok = categories.some((c) => c.count !== null);
+      return { ...meta, status: ok ? ("ok" as const) : ("error" as const), ...(ok ? {} : { message: "Data temporarily unavailable" }), total: categories.reduce((n, c) => n + (c.count ?? 0), 0), categories, mappedShelters };
+    });
+  });
