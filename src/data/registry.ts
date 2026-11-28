@@ -110,11 +110,11 @@ export const MODELS: ModelInfo[] = [
     notes: "Legacy: trained before the v4 satellite-observation labels existed. See docs/model-cards/dz-north-xgb-v1.md.",
   },
   {
-    id: "cd-katanga-lgbm-v1", coverage: "DR Congo / Haut-Katanga pilot", type: "LightGBM", version: "v1",
+    id: "cd-katanga-lgbm-v1", coverage: "DR Congo / Haut-Katanga pilot", type: "LogisticRegression (no weather)", version: "v2",
     trainingPeriod: "2020-2023 train / 2024 validation / 2025 test",
-    features: ["doy_sin", "doy_cos", "tmax", "tmin", "wind", "rh", "rain7", "rain30", "rain90", "tmax7", "rh7", "days_since_rain", "fire1", "fire3", "fire7", "nb_fire7", "days_since_fire"],
-    rocAuc: 0.9725, prAuc: 0.9183, bbox: [24.8, -13.0, 29.0, -8.2], status: "in-development", lastUpdate: "2026-11-25",
-    notes: "Pilot study area, held-out areas and held-out year. Needs NASA POWER weather, which publishes 4-6 days late: the file can lag by a few days.",
+    features: ["doy_sin", "doy_cos", "fire1", "fire3", "fire7", "nb_fire7", "days_since_fire"],
+    rocAuc: 0.9688, prAuc: 0.9154, bbox: [24.8, -13.0, 29.0, -8.2], status: "in-development", lastUpdate: "2026-11-28",
+    notes: "Retrained on 2026-11-28 with the same five-model test as the other study areas. A weather-free model scored as well as the LightGBM that needed NASA POWER (held-out PR-AUC 0.9154 vs 0.9176), so the pilot no longer waits for late weather data.",
   },
   {
     id: "ao-moxico-v1", coverage: "Moxico & Bie study area (eastern Angola)", type: "LogisticRegression (no weather)", version: "v1",

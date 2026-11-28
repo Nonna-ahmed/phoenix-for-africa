@@ -16,28 +16,117 @@
    "status": "experimental",
    "validated": false,
    "risk_file": "/data/risk-haut-katanga.json",
-   "risk_date": "2026-11-25",
+   "risk_date": "2026-11-28",
    "estimates_available": true,
    "reasons": [],
    "model": {
-    "selected": "no_coords",
-    "type": "LightGBM",
-    "format": "lightgbm-txt",
-    "uses_weather": true,
+    "selected": "logit_nowx",
+    "type": "LogisticRegression (no weather)",
+    "format": "sklearn-joblib",
+    "uses_weather": false,
     "test_year": 2025,
-    "trained_utc": null,
-    "features": 17,
+    "trained_utc": "2026-11-28T08:13:45Z",
+    "features": 7,
     "held_out": {
-     "pr_auc": 0.9183,
-     "roc_auc": 0.9725,
-     "brier": 0.0532,
-     "recall_top10pct": 0.3983,
-     "precision_top10pct": 0.9618,
+     "pr_auc": 0.9154,
+     "roc_auc": 0.9688,
+     "brier": 0.0539,
+     "recall_top10pct": 0.3984,
+     "precision_top10pct": 0.9622,
      "pos_rate": 0.2415
     },
-    "reason": null,
-    "rule": null,
-    "table": []
+    "reason": "Best overall was lgbm_nowx (0.9176); the best model that needs no weather data was lgbm_nowx (0.9176, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk. Within 0.003 PR-AUC the cheaper model wins, so logit_nowx was kept.",
+    "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+    "table": [
+     {
+      "model": "lgbm_nowx",
+      "kind": "candidate",
+      "family": "LightGBM (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9176,
+      "roc_auc": 0.9719,
+      "brier": 0.0553,
+      "recall_top10pct": 0.3965,
+      "precision_top10pct": 0.9576
+     },
+     {
+      "model": "lgbm_full",
+      "kind": "candidate",
+      "family": "LightGBM",
+      "uses_weather": true,
+      "pr_auc": 0.917,
+      "roc_auc": 0.9721,
+      "brier": 0.0542,
+      "recall_top10pct": 0.3982,
+      "precision_top10pct": 0.9615
+     },
+     {
+      "model": "logit_nowx",
+      "kind": "candidate",
+      "family": "LogisticRegression (no weather)",
+      "uses_weather": false,
+      "pr_auc": 0.9154,
+      "roc_auc": 0.9688,
+      "brier": 0.0539,
+      "recall_top10pct": 0.3984,
+      "precision_top10pct": 0.9622
+     },
+     {
+      "model": "hgb_full",
+      "kind": "candidate",
+      "family": "HistGradientBoosting",
+      "uses_weather": true,
+      "pr_auc": 0.9142,
+      "roc_auc": 0.9721,
+      "brier": 0.0543,
+      "recall_top10pct": 0.3968,
+      "precision_top10pct": 0.9583
+     },
+     {
+      "model": "rf_full",
+      "kind": "candidate",
+      "family": "RandomForest",
+      "uses_weather": true,
+      "pr_auc": 0.9142,
+      "roc_auc": 0.9714,
+      "brier": 0.0538,
+      "recall_top10pct": 0.3964,
+      "precision_top10pct": 0.9573
+     },
+     {
+      "model": "persistence_fire7",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.89,
+      "roc_auc": 0.9597,
+      "brier": 0.132,
+      "recall_top10pct": 0.3907,
+      "precision_top10pct": 0.9436
+     },
+     {
+      "model": "persistence_fire1",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.7333,
+      "roc_auc": 0.8783,
+      "brier": 0.0879,
+      "recall_top10pct": 0.3333,
+      "precision_top10pct": 0.805
+     },
+     {
+      "model": "climatology_doy",
+      "kind": "baseline",
+      "family": "baseline",
+      "uses_weather": false,
+      "pr_auc": 0.6092,
+      "roc_auc": 0.8785,
+      "brier": 0.1173,
+      "recall_top10pct": 0.2672,
+      "precision_top10pct": 0.6451
+     }
+    ]
    }
   },
   {
@@ -1589,5 +1678,5 @@
    }
   }
  ],
- "generated_utc": "2026-11-28T07:02:37Z"
+ "generated_utc": "2026-11-28T08:13:51Z"
 }

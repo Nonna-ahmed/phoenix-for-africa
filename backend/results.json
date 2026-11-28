@@ -1,98 +1,93 @@
 {
- "no_coords|seen_areas_2025": {
+ "lgbm_full|seen_areas_2025": {
   "n": 93440,
   "pos_rate": 0.262,
-  "pr_auc": 0.8986,
-  "roc_auc": 0.9624,
-  "brier": 0.0654,
-  "recall_top10pct": 0.3653,
-  "precision_top10pct": 0.9573,
-  "best_iter": 65
+  "pr_auc": 0.8975,
+  "roc_auc": 0.9621,
+  "brier": 0.0663,
+  "recall_top10pct": 0.3651,
+  "precision_top10pct": 0.9568
  },
- "no_coords|seen_areas_2025|calibrated": {
+ "lgbm_full|held_out_areas_2025": {
+  "n": 30660,
+  "pos_rate": 0.2415,
+  "pr_auc": 0.917,
+  "roc_auc": 0.9721,
+  "brier": 0.0542,
+  "recall_top10pct": 0.3982,
+  "precision_top10pct": 0.9615
+ },
+ "lgbm_nowx|seen_areas_2025": {
   "n": 93440,
   "pos_rate": 0.262,
-  "pr_auc": 0.8956,
-  "roc_auc": 0.9624,
-  "brier": 0.0648,
-  "recall_top10pct": 0.3656,
-  "precision_top10pct": 0.9579
+  "pr_auc": 0.8963,
+  "roc_auc": 0.9618,
+  "brier": 0.0675,
+  "recall_top10pct": 0.3644,
+  "precision_top10pct": 0.9547
  },
- "no_coords|held_out_areas_2025": {
+ "lgbm_nowx|held_out_areas_2025": {
   "n": 30660,
   "pos_rate": 0.2415,
-  "pr_auc": 0.9183,
-  "roc_auc": 0.9725,
-  "brier": 0.0532,
-  "recall_top10pct": 0.3983,
-  "precision_top10pct": 0.9618,
-  "best_iter": 65
+  "pr_auc": 0.9176,
+  "roc_auc": 0.9719,
+  "brier": 0.0553,
+  "recall_top10pct": 0.3965,
+  "precision_top10pct": 0.9576
  },
- "no_coords|held_out_areas_2025|calibrated": {
-  "n": 30660,
-  "pos_rate": 0.2415,
-  "pr_auc": 0.9157,
-  "roc_auc": 0.9725,
-  "brier": 0.0525,
-  "recall_top10pct": 0.3979,
-  "precision_top10pct": 0.9609
- },
- "importance_gain": {
-  "fire7": 1595359,
-  "nb_fire7": 324406,
-  "days_since_fire": 31168,
-  "doy_cos": 29634,
-  "fire3": 16693,
-  "doy_sin": 13410,
-  "fire1": 7596,
-  "days_since_rain": 5896,
-  "rain30": 5770,
-  "rh7": 4390,
-  "tmax7": 2653,
-  "rain7": 2324,
-  "tmin": 2133,
-  "rain90": 2098,
-  "wind": 766,
-  "tmax": 618,
-  "rh": 411
- },
- "with_coords|seen_areas_2025": {
+ "hgb_full|seen_areas_2025": {
   "n": 93440,
   "pos_rate": 0.262,
-  "pr_auc": 0.9017,
-  "roc_auc": 0.9646,
-  "brier": 0.0643,
-  "recall_top10pct": 0.3658,
-  "precision_top10pct": 0.9585,
-  "best_iter": 187
+  "pr_auc": 0.8943,
+  "roc_auc": 0.9619,
+  "brier": 0.0664,
+  "recall_top10pct": 0.3622,
+  "precision_top10pct": 0.9492
  },
- "with_coords|seen_areas_2025|calibrated": {
+ "hgb_full|held_out_areas_2025": {
+  "n": 30660,
+  "pos_rate": 0.2415,
+  "pr_auc": 0.9142,
+  "roc_auc": 0.9721,
+  "brier": 0.0543,
+  "recall_top10pct": 0.3968,
+  "precision_top10pct": 0.9583
+ },
+ "rf_full|seen_areas_2025": {
   "n": 93440,
   "pos_rate": 0.262,
-  "pr_auc": 0.8985,
-  "roc_auc": 0.9646,
-  "brier": 0.0642,
-  "recall_top10pct": 0.3659,
-  "precision_top10pct": 0.9588
+  "pr_auc": 0.896,
+  "roc_auc": 0.9618,
+  "brier": 0.0658,
+  "recall_top10pct": 0.3641,
+  "precision_top10pct": 0.9541
  },
- "with_coords|held_out_areas_2025": {
+ "rf_full|held_out_areas_2025": {
   "n": 30660,
   "pos_rate": 0.2415,
-  "pr_auc": 0.9194,
-  "roc_auc": 0.9737,
-  "brier": 0.0527,
-  "recall_top10pct": 0.3975,
-  "precision_top10pct": 0.9599,
-  "best_iter": 187
+  "pr_auc": 0.9142,
+  "roc_auc": 0.9714,
+  "brier": 0.0538,
+  "recall_top10pct": 0.3964,
+  "precision_top10pct": 0.9573
  },
- "with_coords|held_out_areas_2025|calibrated": {
+ "logit_nowx|seen_areas_2025": {
+  "n": 93440,
+  "pos_rate": 0.262,
+  "pr_auc": 0.8959,
+  "roc_auc": 0.9595,
+  "brier": 0.0659,
+  "recall_top10pct": 0.3645,
+  "precision_top10pct": 0.9551
+ },
+ "logit_nowx|held_out_areas_2025": {
   "n": 30660,
   "pos_rate": 0.2415,
-  "pr_auc": 0.9164,
-  "roc_auc": 0.9737,
-  "brier": 0.0527,
-  "recall_top10pct": 0.3978,
-  "precision_top10pct": 0.9605
+  "pr_auc": 0.9154,
+  "roc_auc": 0.9688,
+  "brier": 0.0539,
+  "recall_top10pct": 0.3984,
+  "precision_top10pct": 0.9622
  },
  "persistence_fire7|seen_areas_2025": {
   "n": 93440,
@@ -148,130 +143,21 @@
   "recall_top10pct": 0.2672,
   "precision_top10pct": 0.6451
  },
- "reliability_no_coords_held_out": [
-  {
-   "bin": "0.0-0.1",
-   "n": 20218,
-   "mean_pred": 0.023,
-   "obs_rate": 0.012
-  },
-  {
-   "bin": "0.1-0.2",
-   "n": 913,
-   "mean_pred": 0.143,
-   "obs_rate": 0.158
-  },
-  {
-   "bin": "0.2-0.3",
-   "n": 799,
-   "mean_pred": 0.249,
-   "obs_rate": 0.225
-  },
-  {
-   "bin": "0.3-0.4",
-   "n": 754,
-   "mean_pred": 0.348,
-   "obs_rate": 0.346
-  },
-  {
-   "bin": "0.4-0.5",
-   "n": 589,
-   "mean_pred": 0.451,
-   "obs_rate": 0.479
-  },
-  {
-   "bin": "0.5-0.6",
-   "n": 764,
-   "mean_pred": 0.552,
-   "obs_rate": 0.609
-  },
-  {
-   "bin": "0.6-0.7",
-   "n": 966,
-   "mean_pred": 0.651,
-   "obs_rate": 0.68
-  },
-  {
-   "bin": "0.7-0.8",
-   "n": 992,
-   "mean_pred": 0.748,
-   "obs_rate": 0.777
-  },
-  {
-   "bin": "0.8-0.9",
-   "n": 2781,
-   "mean_pred": 0.863,
-   "obs_rate": 0.923
-  },
-  {
-   "bin": "0.9-1.0",
-   "n": 1884,
-   "mean_pred": 0.92,
-   "obs_rate": 0.976
-  }
+ "model_sha256": "b301082747130325aa1db9fca182e40a35de81fa2d8ff3d95861a6c375fad03b",
+ "region": "haut-katanga",
+ "selected_model": "logit_nowx",
+ "model_format": "sklearn-joblib",
+ "model_type": "LogisticRegression (no weather)",
+ "features": [
+  "doy_sin",
+  "doy_cos",
+  "fire1",
+  "fire3",
+  "fire7",
+  "nb_fire7",
+  "days_since_fire"
  ],
- "monthly_held_out_2025_no_coords": {
-  "1": {
-   "pos_rate": 0.005,
-   "pr_auc": 0.027,
-   "roc_auc": 0.806
-  },
-  "2": {
-   "pos_rate": 0.005,
-   "pr_auc": 0.022,
-   "roc_auc": 0.756
-  },
-  "3": {
-   "pos_rate": 0.013,
-   "pr_auc": 0.068,
-   "roc_auc": 0.78
-  },
-  "4": {
-   "pos_rate": 0.047,
-   "pr_auc": 0.334,
-   "roc_auc": 0.877
-  },
-  "5": {
-   "pos_rate": 0.2,
-   "pr_auc": 0.725,
-   "roc_auc": 0.911
-  },
-  "6": {
-   "pos_rate": 0.521,
-   "pr_auc": 0.939,
-   "roc_auc": 0.945
-  },
-  "7": {
-   "pos_rate": 0.635,
-   "pr_auc": 0.972,
-   "roc_auc": 0.966
-  },
-  "8": {
-   "pos_rate": 0.647,
-   "pr_auc": 0.972,
-   "roc_auc": 0.972
-  },
-  "9": {
-   "pos_rate": 0.488,
-   "pr_auc": 0.837,
-   "roc_auc": 0.879
-  },
-  "10": {
-   "pos_rate": 0.278,
-   "pr_auc": 0.68,
-   "roc_auc": 0.871
-  },
-  "11": {
-   "pos_rate": 0.037,
-   "pr_auc": 0.233,
-   "roc_auc": 0.811
-  },
-  "12": {
-   "pos_rate": 0.005,
-   "pr_auc": 0.132,
-   "roc_auc": 0.916
-  }
- },
+ "uses_weather": false,
  "footprint": {
   "bbox_WSEN": [
    24.8,
@@ -287,25 +173,230 @@
   "test": "2025",
   "weather_lag_days": 3
  },
- "region": "haut-katanga",
- "model_sha256": "e3f6c66c98459aa503d50f9653970ea8af6de8e12499d66ee4bb976f7909eca6",
- "features": [
-  "doy_sin",
-  "doy_cos",
-  "tmax",
-  "tmin",
-  "wind",
-  "rh",
-  "rain7",
-  "rain30",
-  "rain90",
-  "tmax7",
-  "rh7",
-  "days_since_rain",
-  "fire1",
-  "fire3",
-  "fire7",
-  "nb_fire7",
-  "days_since_fire"
- ]
+ "train_rows_sampled": true,
+ "selection": {
+  "selected": "logit_nowx",
+  "rule": "best held-out PR-AUC among models that need no weather data; cheaper model kept within 0.003",
+  "tolerance": 0.003,
+  "beats_all_baselines": true,
+  "reason": "Best overall was lgbm_nowx (0.9176); the best model that needs no weather data was lgbm_nowx (0.9176, +0.0000). Models that need NASA POWER are not shipped because POWER publishes 4-6 days late and the daily job could not always produce today's risk. Within 0.003 PR-AUC the cheaper model wins, so logit_nowx was kept.",
+  "table": [
+   {
+    "model": "lgbm_nowx",
+    "kind": "candidate",
+    "family": "LightGBM (no weather)",
+    "uses_weather": false,
+    "features": 7,
+    "seconds": 1.6,
+    "best_iter": 34,
+    "pr_auc": 0.9176,
+    "roc_auc": 0.9719,
+    "brier": 0.0553,
+    "recall_top10pct": 0.3965,
+    "precision_top10pct": 0.9576
+   },
+   {
+    "model": "lgbm_full",
+    "kind": "candidate",
+    "family": "LightGBM",
+    "uses_weather": true,
+    "features": 17,
+    "seconds": 2.4,
+    "best_iter": 44,
+    "pr_auc": 0.917,
+    "roc_auc": 0.9721,
+    "brier": 0.0542,
+    "recall_top10pct": 0.3982,
+    "precision_top10pct": 0.9615
+   },
+   {
+    "model": "logit_nowx",
+    "kind": "candidate",
+    "family": "LogisticRegression (no weather)",
+    "uses_weather": false,
+    "features": 7,
+    "seconds": 0.2,
+    "pr_auc": 0.9154,
+    "roc_auc": 0.9688,
+    "brier": 0.0539,
+    "recall_top10pct": 0.3984,
+    "precision_top10pct": 0.9622
+   },
+   {
+    "model": "hgb_full",
+    "kind": "candidate",
+    "family": "HistGradientBoosting",
+    "uses_weather": true,
+    "features": 17,
+    "seconds": 3.7,
+    "pr_auc": 0.9142,
+    "roc_auc": 0.9721,
+    "brier": 0.0543,
+    "recall_top10pct": 0.3968,
+    "precision_top10pct": 0.9583
+   },
+   {
+    "model": "rf_full",
+    "kind": "candidate",
+    "family": "RandomForest",
+    "uses_weather": true,
+    "features": 17,
+    "seconds": 47.4,
+    "pr_auc": 0.9142,
+    "roc_auc": 0.9714,
+    "brier": 0.0538,
+    "recall_top10pct": 0.3964,
+    "precision_top10pct": 0.9573
+   },
+   {
+    "model": "persistence_fire7",
+    "kind": "baseline",
+    "family": "baseline",
+    "uses_weather": false,
+    "features": 0,
+    "pr_auc": 0.89,
+    "roc_auc": 0.9597,
+    "brier": 0.132,
+    "recall_top10pct": 0.3907,
+    "precision_top10pct": 0.9436
+   },
+   {
+    "model": "persistence_fire1",
+    "kind": "baseline",
+    "family": "baseline",
+    "uses_weather": false,
+    "features": 0,
+    "pr_auc": 0.7333,
+    "roc_auc": 0.8783,
+    "brier": 0.0879,
+    "recall_top10pct": 0.3333,
+    "precision_top10pct": 0.805
+   },
+   {
+    "model": "climatology_doy",
+    "kind": "baseline",
+    "family": "baseline",
+    "uses_weather": false,
+    "features": 0,
+    "pr_auc": 0.6092,
+    "roc_auc": 0.8785,
+    "brier": 0.1173,
+    "recall_top10pct": 0.2672,
+    "precision_top10pct": 0.6451
+   }
+  ]
+ },
+ "reliability_held_out": [
+  {
+   "bin": "0.0-0.1",
+   "n": 20689,
+   "mean_pred": 0.021,
+   "obs_rate": 0.015
+  },
+  {
+   "bin": "0.1-0.2",
+   "n": 850,
+   "mean_pred": 0.144,
+   "obs_rate": 0.193
+  },
+  {
+   "bin": "0.2-0.3",
+   "n": 605,
+   "mean_pred": 0.247,
+   "obs_rate": 0.255
+  },
+  {
+   "bin": "0.3-0.4",
+   "n": 485,
+   "mean_pred": 0.349,
+   "obs_rate": 0.384
+  },
+  {
+   "bin": "0.4-0.5",
+   "n": 527,
+   "mean_pred": 0.449,
+   "obs_rate": 0.52
+  },
+  {
+   "bin": "0.5-0.6",
+   "n": 536,
+   "mean_pred": 0.551,
+   "obs_rate": 0.547
+  },
+  {
+   "bin": "0.6-0.7",
+   "n": 700,
+   "mean_pred": 0.651,
+   "obs_rate": 0.613
+  },
+  {
+   "bin": "0.7-0.8",
+   "n": 934,
+   "mean_pred": 0.753,
+   "obs_rate": 0.715
+  },
+  {
+   "bin": "0.8-0.9",
+   "n": 1891,
+   "mean_pred": 0.857,
+   "obs_rate": 0.869
+  },
+  {
+   "bin": "0.9-1.0",
+   "n": 3443,
+   "mean_pred": 0.93,
+   "obs_rate": 0.953
+  }
+ ],
+ "monthly_held_out": {
+  "1": {
+   "pos_rate": 0.005,
+   "pr_auc": 0.035
+  },
+  "2": {
+   "pos_rate": 0.005,
+   "pr_auc": 0.023
+  },
+  "3": {
+   "pos_rate": 0.013,
+   "pr_auc": 0.064
+  },
+  "4": {
+   "pos_rate": 0.047,
+   "pr_auc": 0.327
+  },
+  "5": {
+   "pos_rate": 0.2,
+   "pr_auc": 0.729
+  },
+  "6": {
+   "pos_rate": 0.521,
+   "pr_auc": 0.938
+  },
+  "7": {
+   "pos_rate": 0.635,
+   "pr_auc": 0.975
+  },
+  "8": {
+   "pos_rate": 0.647,
+   "pr_auc": 0.971
+  },
+  "9": {
+   "pos_rate": 0.488,
+   "pr_auc": 0.838
+  },
+  "10": {
+   "pos_rate": 0.278,
+   "pr_auc": 0.637
+  },
+  "11": {
+   "pos_rate": 0.037,
+   "pr_auc": 0.242
+  },
+  "12": {
+   "pos_rate": 0.005,
+   "pr_auc": 0.157
+  }
+ },
+ "trained_utc": "2026-11-28T08:13:45Z"
 }

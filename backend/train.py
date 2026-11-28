@@ -75,11 +75,15 @@ def make(name):
         return make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000, C=0.5))
     raise SystemExit(name)
 
-out = {}; table = []; fitted = {}
+out = {}; table = []; fitted = {}; sampled = False
 Xtr_va, ytr_va = {}, {}
 for name, label, feats, uses_wx in CANDIDATES:
     t0 = time.time(); m = make(name)
     Xtr, ytr = mat(tr, feats, notheld); Xva, yva = mat(va, feats, notheld)
+    # Large study areas (the 0.25 degree pilot) are capped at 150k training rows so one run fits a CI-sized
+    # time budget; every candidate for that region uses the same seeded sample, so the comparison stays fair.
+    if len(ytr) > 150_000:
+        idx = np.random.RandomState(3).choice(len(ytr), 150_000, replace=False); Xtr, ytr = Xtr[idx], ytr[idx]; sampled = True
     if name.startswith('lgbm'):
         m.fit(Xtr, ytr, eval_set=[(Xva, yva)], eval_metric='average_precision', callbacks=[lgb.early_stopping(40, verbose=False)])
         best_iter = int(m.best_iteration_ or 0)
@@ -138,6 +142,7 @@ out['region'] = R['id']; out['selected_model'] = selected['model']; out['model_f
 out['model_type'] = selected['family']; out['features'] = list(feats); out['uses_weather'] = uses_wx
 out['footprint'] = {'bbox_WSEN': list(R['bbox_WSEN']), 'cell_deg': STEP, 'cells': int(nI * nJ), 'held_out_cells': int(isheld.sum()),
                     'train': f'{min(TRY)}-01-01..{max(TRY)}-12-31', 'val': str(VY), 'test': str(TY), 'weather_lag_days': WL}
+out['train_rows_sampled'] = bool(sampled)
 out['selection'] = {'selected': selected['model'], 'rule': f'best held-out PR-AUC among models that need no weather data; cheaper model kept within {TOL}',
                     'tolerance': TOL, 'beats_all_baselines': bool(beats), 'reason': reason,
                     'table': sorted(table, key=lambda t: (t['kind'] != 'candidate', -t['pr_auc']))}
