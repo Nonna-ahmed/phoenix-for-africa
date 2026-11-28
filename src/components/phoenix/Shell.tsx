@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { loadStaticMeta, describeFreshness, isStale } from "@/services/staticRisk";
+import { loadManifestRegions, describeRegionsFreshness } from "@/services/staticRisk";
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 
@@ -12,7 +12,9 @@ function RiskFreshness() {
   const [info, setInfo] = useState<string>("Risk file: loading…");
   const [stale, setStale] = useState(false);
   useEffect(() => {
-    loadStaticMeta().then((m) => { setInfo(describeFreshness(m)); setStale(isStale(m)); }).catch(() => { setInfo("Risk file: unavailable"); setStale(true); });
+    loadManifestRegions()
+      .then((regions) => { const f = describeRegionsFreshness(regions); setInfo(f.text); setStale(f.stale); })
+      .catch(() => { setInfo("Risk files: unavailable"); setStale(true); });
   }, []);
   return <strong className={stale ? "text-destructive" : ""}> {info}</strong>;
 }
@@ -39,7 +41,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <div className="border-b bg-primary/10 px-4 py-1.5 text-center text-xs text-primary">
-        Experimental pilot: daily satellite-detection risk for a rectangular study area around Haut-Katanga (DR Congo), not a province boundary and it includes parts of neighbouring countries. Hotspots are satellite detections, not confirmed ground fires. <RiskFreshness />
+        Experimental: daily satellite-detection risk for 13 rectangular study areas across Africa, each with its own tested model. They are not administrative boundaries and some include neighbouring countries. Hotspots are satellite detections, not confirmed ground fires. <RiskFreshness />
       </div>
       <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
       <footer className="border-t px-4 py-6 text-center text-xs text-muted-foreground">

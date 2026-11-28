@@ -19,7 +19,7 @@ export const STATIC_REGION_IDS = ["haut-katanga", "ao-moxico", "zm-central", "mz
 /** True when this query is served by static files: a region (or country) that has a tested model. */
 export function staticCovers(a: AreaQuery | null | undefined): boolean {
   if (!a) return false;
-  const c = getCountry(a.country);
+  const c = a.country ? getCountry(a.country) : undefined;
   if (!c) return false;
   if (!a.region) return c.regions.some((r) => STATIC_REGION_IDS.includes(r.id));
   return c.regions.some((r) => r.id === a.region && STATIC_REGION_IDS.includes(r.id));
@@ -27,7 +27,7 @@ export function staticCovers(a: AreaQuery | null | undefined): boolean {
 
 /** Region ids to load for a query: the one region, or every study area in the country. */
 export function staticRegionIds(a: AreaQuery): string[] {
-  const c = getCountry(a.country);
+  const c = a.country ? getCountry(a.country) : undefined;
   if (!c) return [];
   const withModel = c.regions.filter((r) => STATIC_REGION_IDS.includes(r.id));
   if (a.region) return withModel.filter((r) => r.id === a.region).map((r) => r.id);
@@ -93,4 +93,25 @@ export function describeFreshness(m: StaticMeta, now: Date = new Date()): string
   if (!Number.isFinite(h)) return "Risk file: issue time unknown, treat as stale.";
   const base = `Risk for UTC day ${m.date ?? "?"}, issued ${m.generated_utc}.`;
   return isStale(m, now) ? `${base} STALE: this is not today's (UTC) risk, do not use as current.` : base;
+}
+
+export interface ManifestRegionMeta { id: string; name: string; estimates_available: boolean; risk_date?: string | null }
+
+export async function loadManifestRegions(signal?: AbortSignal): Promise<ManifestRegionMeta[]> {
+  const r = await fetch(MANIFEST_URL, { signal: signal ?? null, headers: { Accept: "application/json" } });
+  if (!r.ok) throw new Error(`No manifest (HTTP ${r.status})`);
+  const m = (await r.json()) as { regions?: ManifestRegionMeta[] };
+  return m.regions ?? [];
+}
+
+/** One line about every study area's file: today's date, or how old it is. Never calls an old file "low". */
+export function describeRegionsFreshness(regions: ManifestRegionMeta[], now: Date = new Date()): { text: string; stale: boolean } {
+  const today = now.toISOString().slice(0, 10);
+  const shown = regions.filter((r) => r.estimates_available);
+  if (shown.length === 0) return { text: "Risk files: none available", stale: true };
+  const fresh = shown.filter((r) => r.risk_date === today);
+  const old = shown.filter((r) => r.risk_date !== today);
+  if (old.length === 0) return { text: `Risk files: all ${shown.length} study areas are for UTC day ${today}.`, stale: false };
+  const names = old.map((r) => `${r.name} (${r.risk_date ?? "no date"})`).join(", ");
+  return { text: `Risk files: ${fresh.length} of ${shown.length} study areas are for UTC day ${today}. Not today: ${names}. An old file is not a low-risk reading.`, stale: true };
 }

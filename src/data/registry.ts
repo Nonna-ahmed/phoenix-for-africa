@@ -202,6 +202,9 @@ export const MODELS: ModelInfo[] = [
   },
 ];
 
+export const getCountry = (code: string) => COUNTRIES.find((c) => c.code.toLowerCase() === code.toLowerCase() || (code.toUpperCase() === "DRC" && c.code === "CD"));
+export const getModel = (id?: string) => MODELS.find((m) => m.id === id);
+
 export const AFRICA_BBOX: [number, number, number, number] = [-20, -36, 55, 38];
 /** Satellite query area for a scope: region box, else country box, else Africa. */
 export function scopeBbox(countryCode?: string, regionId?: string): [number, number, number, number] {
