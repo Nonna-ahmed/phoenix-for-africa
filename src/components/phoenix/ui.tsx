@@ -16,10 +16,10 @@ export function RiskPill({ p }: { p?: number | null | undefined }) {
 }
 
 const availStyle: Record<Availability, string> = { available: "text-risk-low", limited: "text-risk-medium", unavailable: "text-unavailable" };
-export function DataStatusGrid({ status }: { status: DataStatus }) {
+export function DataStatusGrid({ status, compact }: { status: DataStatus; compact?: boolean }) {
   const rows: [string, Availability][] = [["AI Model", status.aiModel], ["Satellite", status.satellite], ["Environmental", status.environmental], ["Shelters", status.shelters], ["Alerts", status.alerts]];
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3 lg:grid-cols-5">
+    <div className={compact ? "grid grid-cols-2 gap-x-4 gap-y-2" : "grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-5"}>
       {rows.map(([k, v]) => (
         <div key={k}><div className="label-mono">{k}</div><div className={cn("text-sm capitalize", availStyle[v])}>● {k === "Shelters" && v === "limited" ? "Possible places only" : v}</div></div>
       ))}

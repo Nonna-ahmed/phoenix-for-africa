@@ -24,7 +24,7 @@ function Countries() {
               <span className="label-mono rounded-full bg-risk-low/15 px-2.5 py-1 text-risk-low">Live</span>
             </div>
             <p className="mt-3 text-sm text-muted-foreground">{c.regions.map((r) => r.name).join(" · ")}</p>
-            <div className="mt-4 border-t pt-3"><DataStatusGrid status={c.status} /></div>
+            <div className="mt-4 border-t pt-3"><DataStatusGrid status={c.status} compact /></div>
           </Link>
         ))}
       </div>
