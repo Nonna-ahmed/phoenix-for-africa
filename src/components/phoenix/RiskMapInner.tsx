@@ -1,5 +1,5 @@
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, CircleMarker, Rectangle, Popup, ImageOverlay, Polyline, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Rectangle, GeoJSON, Popup, ImageOverlay, Polyline, useMap, useMapEvents } from "react-leaflet";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { COUNTRIES } from "@/data/registry";
@@ -13,6 +13,21 @@ import type { GridResult } from "@/lib/grid.functions";
 import type { OsmHospital, OsmRoad } from "@/lib/osm.functions";
 import { GRID_SCALE, HILLSHADE_TILES, rasterUrl, scaleColor, type RasterId } from "@/data/rasters";
 import type { LayerState } from "./layers";
+import { inCountry, useAfrica, type CountryShape } from "@/lib/geo";
+
+const cellDegFor = (lat: number, lon: number) => (lon >= 24.8 && lon <= 29 && lat >= -13 && lat <= -8.2 ? 0.25 : 0.5);
+const SUB = 3;
+/** Which land a risk cell may be drawn on: the country of the study area whose box holds it, else any African land. */
+function landFilter(shapes: CountryShape[] | null) {
+  const byIso = new Map((shapes ?? []).map((c) => [c.iso, c]));
+  const boxes = COUNTRIES.flatMap((c) => c.regions.filter((r) => r.bbox && r.modelId).map((r) => ({ c: byIso.get(c.code), b: r.bbox! })));
+  return (lat: number, lon: number) => {
+    if (!shapes?.length) return true;
+    const own = boxes.filter((x) => x.c && lon >= x.b[0] && lon <= x.b[2] && lat >= x.b[1] && lat <= x.b[3]);
+    if (own.length) return own.some((x) => inCountry(lon, lat, x.c!));
+    return shapes.some((c) => inCountry(lon, lat, c));
+  };
+}
 
 export type RasterStatus = (id: RasterId | "terrain", ok: boolean) => void;
 export interface MapProps {
@@ -36,6 +51,8 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
   const region = country?.regions.find((r) => r.id === regionId);
   const center: [number, number] = region?.center ?? country?.center ?? [2, 20];
   const zoom = region ? 8 : country?.zoom ?? 3;
+  const shapes = useAfrica();
+  const onLand = landFilter(shapes);
   const color = { HIGH: css("--risk-high"), MEDIUM: css("--risk-medium"), LOW: css("--risk-low") };
 
   return (
@@ -71,25 +88,34 @@ export default function RiskMapInner({ countryCode, regionId, on, riskFilter = "
             <Popup><b>{c.name}</b><br />{c.coverage === "active" ? "Real data coverage" : "Coverage: Coming Soon"}</Popup>
           </CircleMarker>
         ))}
-        {COUNTRIES.flatMap((c) => c.regions.filter((r) => r.bbox && (!countryCode || c.code === countryCode)).map((r) => (
-          <Rectangle key={r.id} bounds={[[r.bbox![1], r.bbox![0]], [r.bbox![3], r.bbox![2]]]} pathOptions={{ color: css("--muted-foreground"), weight: 1, dashArray: "4", fillOpacity: 0 }} />
-        )))}
+        {shapes && COUNTRIES.filter((c) => c.regions.some((r) => r.modelId) && (!countryCode || c.code === countryCode)).map((c) => {
+          const sh = shapes.find((x) => x.iso === c.code);
+          return sh ? <GeoJSON key={`o${c.code}`} interactive={false} data={{ type: sh.type, coordinates: sh.type === "Polygon" ? sh.coords[0] : sh.coords } as never} style={{ color: css("--muted-foreground"), weight: 1.2, fillOpacity: 0 }} /> : null;
+        })}
         {on.risk && risk.map((p, i) => {
           const lvl = p.probability !== null ? riskLevel(p.probability) : null;
           if (riskFilter !== "ALL" && riskFilter !== lvl) return null;
+          if (!onLand(p.lat, p.lon)) return null;
           const c = lvl ? color[lvl] : css("--unavailable");
-          return (
-            <CircleMarker key={`${p.lat},${p.lon},${i}`} center={[p.lat, p.lon]} radius={7} pathOptions={{ color: c, fillColor: c, fillOpacity: 0.55, weight: 1 }}>
-              <Popup>
-                <b>Predicted Wildfire Risk</b><br />
-                {p.lat.toFixed(3)}, {p.lon.toFixed(3)}<br />
-                Probability: {p.probability !== null ? `${(p.probability * 100).toFixed(1)}%` : "Data unavailable"}<br />
-                Risk level: {lvl ?? "Data unavailable"}<br />
-                Date: {na(p.date)}<br />
-                {p.environment ? <>T2M_MAX {fmt(p.environment.t2mMax, "°C")} · T2M_MIN {fmt(p.environment.t2mMin, "°C")}<br />RH2M {fmt(p.environment.rh2m, "%")} · WS2M {fmt(p.environment.ws2m, " m/s")} · PRECTOTCORR {fmt(p.environment.precip, " mm")}</> : "Environmental data unavailable"}
-              </Popup>
-            </CircleMarker>
+          const d = cellDegFor(p.lat, p.lon), sd = d / SUB;
+          const subs: [number, number][] = [];
+          for (let a = 0; a < SUB; a++) for (let b = 0; b < SUB; b++) {
+            const la = p.lat - d / 2 + sd * (a + 0.5), lo = p.lon - d / 2 + sd * (b + 0.5);
+            if (!shapes?.length || onLand(la, lo)) subs.push([la, lo]);
+          }
+          const pop = (
+            <Popup>
+              <b>Predicted Wildfire Risk</b><br />
+              {p.lat.toFixed(3)}, {p.lon.toFixed(3)}<br />
+              Probability: {p.probability !== null ? `${(p.probability * 100).toFixed(1)}%` : "Data unavailable"}<br />
+              Risk level: {lvl ?? "Data unavailable"}<br />
+              Date: {na(p.date)}<br />
+              {p.environment ? <>T2M_MAX {fmt(p.environment.t2mMax, "°C")} · T2M_MIN {fmt(p.environment.t2mMin, "°C")}<br />RH2M {fmt(p.environment.rh2m, "%")} · WS2M {fmt(p.environment.ws2m, " m/s")} · PRECTOTCORR {fmt(p.environment.precip, " mm")}</> : "Environmental data unavailable"}
+            </Popup>
           );
+          return subs.map(([la, lo], k) => (
+            <Rectangle key={`${p.lat},${p.lon},${i},${k}`} bounds={[[la - sd / 2, lo - sd / 2], [la + sd / 2, lo + sd / 2]]} pathOptions={{ stroke: true, weight: 1, color: c, opacity: 0.6, fillColor: c, fillOpacity: 0.6 }}>{pop}</Rectangle>
+          ));
         })}
         {locations.map((l) => {
           const confirmed = isConfirmedShelter(l);

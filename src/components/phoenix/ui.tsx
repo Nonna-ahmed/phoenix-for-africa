@@ -16,10 +16,10 @@ export function RiskPill({ p }: { p?: number | null | undefined }) {
 }
 
 const availStyle: Record<Availability, string> = { available: "text-risk-low", limited: "text-risk-medium", unavailable: "text-unavailable" };
-export function DataStatusGrid({ status }: { status: DataStatus }) {
+export function DataStatusGrid({ status, compact }: { status: DataStatus; compact?: boolean }) {
   const rows: [string, Availability][] = [["AI Model", status.aiModel], ["Satellite", status.satellite], ["Environmental", status.environmental], ["Shelters", status.shelters], ["Alerts", status.alerts]];
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-5">
+    <div className={compact ? "grid grid-cols-2 gap-x-4 gap-y-2" : "grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-5"}>
       {rows.map(([k, v]) => (
         <div key={k}><div className="label-mono">{k}</div><div className={cn("text-sm capitalize", availStyle[v])}>● {k === "Shelters" && v === "limited" ? "Possible places only" : v}</div></div>
       ))}
@@ -29,7 +29,7 @@ export function DataStatusGrid({ status }: { status: DataStatus }) {
 
 export function Stat({ label, value, tone }: { label: string; value: ReactNode; tone?: string }) {
   return (
-    <div className="rounded-md border bg-card p-4">
+    <div className="rounded-xl border bg-card p-4">
       <div className="label-mono">{label}</div>
       <div className={cn("mt-1 font-display text-3xl font-semibold", tone)}>{value}</div>
     </div>
@@ -38,7 +38,7 @@ export function Stat({ label, value, tone }: { label: string; value: ReactNode; 
 
 export function Section({ title, right, children }: { title: string; right?: ReactNode; children: ReactNode }) {
   return (
-    <section className="rounded-md border bg-card/70 p-4">
+    <section className="rounded-xl border bg-card/70 p-5 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">{title}</h2>{right}</div>
       {children}
     </section>

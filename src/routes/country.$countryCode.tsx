@@ -29,7 +29,7 @@ function CountryPage() {
   if (!c) return <Empty>Country not supported.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? (c.regions.some((r) => !!r.modelId) ? "Experimental: risk is shown for a rectangular study area that has its own tested model, not for the whole country. It is not an administrative boundary and can include neighbouring areas. Each estimate is a satellite-detection probability, not a confirmed fire." : "Prediction backend not connected.") : "Coverage: Coming Soon"}</PageHeader>
+      <PageHeader eyebrow={`Africa / ${c.code}`} title={c.name}>{c.coverage === "active" ? (c.regions.some((r) => !!r.modelId) ? "Experimental: risk is shown only where a study area with its own tested model overlaps this country, drawn inside the country border. It is not an administrative boundary. Each estimate is a satellite-detection probability, not a confirmed fire." : "Prediction backend not connected.") : "Coverage: Coming Soon"}</PageHeader>
       <Section title="Data availability"><DataStatusGrid status={c.status} /></Section>
       <Section title="Country map"><RiskMap countryCode={c.code} height={420} /></Section>
       {!apiBaseUrl() && c.regions.some((r) => !!r.modelId) && <StudyAreaSummary code={c.code} />}
@@ -69,7 +69,7 @@ function StudyAreaSummary({ code }: { code: string }) {
         : (() => {
           const pts = q.data.filter((x) => x.probability !== null);
           const peak = pts.reduce((m, x) => Math.max(m, x.probability ?? 0), 0);
-          return <p className="text-sm">{pts.length} cells, peak single-cell probability {Math.round(peak * 100)}%. Cells are rectangular study areas, not administrative boundaries, and may include neighbouring areas. Low means a lower chance of a satellite detection in the cell, not safety.</p>;
+          return <p className="text-sm">{pts.length} cells, peak single-cell probability {Math.round(peak * 100)}%. Cells are shown inside the country border only. Low means a lower chance of a satellite detection in the cell, not safety.</p>;
         })()}
     </Section>
   );
