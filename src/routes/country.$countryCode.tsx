@@ -7,7 +7,8 @@ import { createFileRoute, Outlet, useMatchRoute } from "@tanstack/react-router";
 import { getCountry } from "@/data/registry";
 import { RiskMap } from "@/components/phoenix/RiskMap";
 import { DataStatusGrid, Empty, PageHeader, RegionLink, RiskPill, Section } from "@/components/phoenix/ui";
-import { AlertList, DetectionList, ReportList, ShelterList } from "@/components/phoenix/LocalLists";
+import { SitePanel } from "@/components/phoenix/SitePanel";
+import { AlertList, DetectionList, EnvPanel, ReportList, SafePlacesPanel, ShelterList } from "@/components/phoenix/LocalLists";
 
 export const Route = createFileRoute("/country/$countryCode")({
   head: ({ params }) => {
@@ -42,6 +43,11 @@ function CountryPage() {
         <AlertList countryCode={c.code} /><DetectionList countryCode={c.code} />
         <ShelterList countryCode={c.code} /><ReportList countryCode={c.code} />
       </div>}
+      {c.coverage === "active" && <>
+        <SafePlacesPanel countryCode={c.code} />
+        <EnvPanel point={c.center} />
+        <SitePanel point={c.center} />
+      </>}
     </div>
   );
 }

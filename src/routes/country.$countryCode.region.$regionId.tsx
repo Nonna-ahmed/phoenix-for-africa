@@ -4,7 +4,7 @@ import { riskLevel } from "@/data/types";
 import { RiskMap } from "@/components/phoenix/RiskMap";
 import { Empty, PageHeader, Section } from "@/components/phoenix/ui";
 import { ApiState, LiveBadge } from "@/components/phoenix/ApiState";
-import { AlertList, DetectionList, EnvPanel, FwiPanel, ReportList, ShelterList } from "@/components/phoenix/LocalLists";
+import { AlertList, DetectionList, EnvPanel, FwiPanel, ReportList, SafePlacesPanel, ShelterList } from "@/components/phoenix/LocalLists";
 import { SitePanel } from "@/components/phoenix/SitePanel";
 import { useRegionSummary } from "@/services/api/hooks";
 
@@ -53,6 +53,7 @@ function RegionPage() {
         </Section>
         <div className="lg:col-span-2"><Section title="Region map"><RiskMap countryCode={c.code} regionId={r.id} height={360} /></Section></div>
       </div>
+      <SafePlacesPanel countryCode={c.code} regionId={r.id} />
       <EnvPanel point={r.center} />
       <SitePanel point={r.center} />
       <div className="grid gap-6 md:grid-cols-2">
